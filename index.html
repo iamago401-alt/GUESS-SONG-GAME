@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 完美修正版</title>
+  <title>猜歌小遊戲 - 最終完美修正版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: #121212; color: #ffffff; font-family: Arial, sans-serif;
       display: flex; justify-content: center; align-items: center; min-height: 100vh;
-      padding: 10px;
-      transition: background-color 0.3s ease;
+      padding: 10px; transition: background-color 0.3s ease;
     }
     .screen {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -79,7 +78,7 @@
     .ready-tag { color: #00d2ff; font-weight: bold; font-size: 14px; }
     .kick-btn { background: none; border: none; color: #ff4d4d; font-size: 16px; font-weight: bold; cursor: pointer; width: auto; }
 
-    /* 【問題 1 精準修復】設定區塊強制黑底白字 */
+    /* 設定區塊強制黑底白字 */
     #room-view .settings-container,
     div.settings-container {
       padding: 15px !important; 
@@ -151,14 +150,12 @@
 </head>
 <body>
 
-  <!-- 首頁 -->
   <div id="main-screen" class="screen">
     <h1 class="game-main-title">歌曲小品遊戲</h1>
     <button id="start-btn">開始</button>
     <button id="about-btn" class="secondary">關於</button>
   </div>
 
-  <!-- 建立/加入房間選擇頁面 -->
   <div id="room-screen" class="screen hidden">
     <div class="input-group">
       <label>請輸入名字：</label>
@@ -169,7 +166,6 @@
     <button id="back-to-main-from-room-btn" class="secondary" style="background-color: #444;">返回首頁</button>
   </div>
 
-  <!-- 輸入房間代碼頁面 -->
   <div id="join-code-screen" class="screen hidden">
     <div class="input-group">
       <label>房間代碼：</label>
@@ -181,7 +177,6 @@
     <button id="back-to-main-from-code-btn" class="secondary" style="background-color: #444;">返回首頁</button>
   </div>
 
-  <!-- 房間大廳畫面 -->
   <div id="room-view" class="hidden">
     <div class="top-bar">
       <button class="back-btn" id="leave-room-btn">↩</button>
@@ -196,7 +191,6 @@
         <div class="settings-container">
           <button id="main-action-btn">開始遊戲</button>
 
-          <!-- 背景選色器 -->
           <div class="setting-row">
             <span class="setting-title">背景顏色：</span>
             <input type="color" id="bg-color-picker" value="#121212" style="width: 50px; height: 35px; border: none; cursor: pointer; background: none;">
@@ -242,7 +236,6 @@
       </div>
 
       <div class="room-right">
-        <!-- 勝場榜 -->
         <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
           <div style="font-size:16px; font-weight:bold; color:#ffd700; margin-bottom:8px; text-align:center;">🏆 累積勝場榜</div>
           <ul class="win-board-list" id="win-board-list" style="list-style:none; display:flex; flex-direction:column; gap:6px;">
@@ -250,7 +243,6 @@
           </ul>
         </div>
 
-        <!-- 聊天室 -->
         <div class="chat-box-container" style="flex:1;">
           <div class="chat-messages" id="room-chat-messages"></div>
           <div class="chat-input-row">
@@ -262,7 +254,6 @@
     </div>
   </div>
 
-  <!-- 關於我們彈窗 -->
   <div id="about-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <div id="about-page-1">
@@ -293,7 +284,6 @@
     </div>
   </div>
 
-  <!-- 玩法介紹彈窗 -->
   <div id="intro-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <h2>歌詞猜謎 - 玩法介紹</h2>
@@ -306,7 +296,6 @@
     </div>
   </div>
 
-  <!-- 遊戲對局畫面 -->
   <div id="game-view" class="hidden">
     <div class="game-main-area">
       <div class="game-scoreboard">
@@ -333,7 +322,6 @@
       </div>
     </div>
 
-    <!-- 遊戲聊天室 -->
     <div class="chat-box-container">
       <div class="chat-messages" id="game-chat-messages"></div>
       <div class="chat-input-row">
@@ -343,7 +331,6 @@
     </div>
   </div>
 
-  <!-- 結算彈窗 -->
   <div id="result-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <h2>🎉 遊戲結束 - 最終結算</h2>
@@ -377,8 +364,8 @@
     let isHost = false;
     let myPlayerName = "";
     let activePlayers = [];
-    let roomListenerRef = null;
-    let chatListenerRef = null;
+    let roomRefObj = null;
+    let chatRefObj = null;
     let isSelfLeaving = false;
     let timerInterval = null;
 
@@ -459,11 +446,17 @@
       aboutModal.classList.add('hidden');
     });
 
-    // 徹底解鎖/清理畫面監聽狀態
+    // 徹底清理狀態與監聽器（完全避免 pieceNum_ 錯誤）
     function resetRoomState() {
       stopAllTimers();
-      if (roomListenerRef) { off(roomListenerRef); roomListenerRef = null; }
-      if (chatListenerRef) { off(chatListenerRef); chatListenerRef = null; }
+      if (roomRefObj) {
+        try { off(roomRefObj); } catch(e){}
+        roomRefObj = null;
+      }
+      if (chatRefObj) {
+        try { off(chatRefObj); } catch(e){}
+        chatRefObj = null;
+      }
       currentActiveRoomCode = "";
       
       mainScreen.classList.add('hidden');
@@ -482,7 +475,7 @@
       mainScreen.classList.remove('hidden');
     }
 
-    // 【問題 2 精準修復】退回「選擇創建/加入房間頁面」
+    // 退回「選擇創建/加入房間頁面」
     function switchToRoomScreen() {
       resetRoomState();
       roomScreen.classList.remove('hidden');
@@ -589,8 +582,8 @@
       myPlayerName = filterBadWords(nameInput);
       isHost = false;
 
-      const roomRef = ref(db, `rooms/${codeInput}`);
-      const snapshot = await get(roomRef);
+      const targetRoomRef = ref(db, `rooms/${codeInput}`);
+      const snapshot = await get(targetRoomRef);
 
       if (!snapshot.exists()) {
         document.getElementById('join-error-msg').innerText = "房間不存在！";
@@ -638,9 +631,8 @@
     }
 
     function listenToRoomData(code) {
-      const roomRef = ref(db, `rooms/${code}`);
-      roomListenerRef = onValue(roomRef, (snapshot) => {
-        // 如果是主動按離開，不跳出警示彈窗
+      roomRefObj = ref(db, `rooms/${code}`);
+      onValue(roomRefObj, (snapshot) => {
         if (isSelfLeaving) return;
 
         if (!snapshot.exists()) {
@@ -1029,15 +1021,18 @@
       }
     });
 
-    // 【問題 2 精準修復】退房按鈕點擊後，徹底移除玩家並導向建立/加入房間頁面
+    // 離開房間：修正變數競爭問題
     leaveRoomBtn.addEventListener('click', async () => {
       if (confirm("確定要離開房間嗎？")) {
         isSelfLeaving = true;
-        if (currentActiveRoomCode && myPlayerName) {
+        const codeToLeave = currentActiveRoomCode;
+        const nameToLeave = myPlayerName;
+
+        if (codeToLeave && nameToLeave) {
           try {
-            await remove(ref(db, `rooms/${currentActiveRoomCode}/players/${myPlayerName}`));
+            await remove(ref(db, `rooms/${codeToLeave}/players/${nameToLeave}`));
           } catch (e) {
-            console.log("移除玩家狀態:", e);
+            console.log("移除玩家狀態時發生異常:", e);
           }
         }
         switchToRoomScreen();
@@ -1046,8 +1041,8 @@
     });
 
     function listenToChat(code) {
-      const chatRef = ref(db, `rooms/${code}/chats`);
-      chatListenerRef = onValue(chatRef, (snapshot) => {
+      chatRefObj = ref(db, `rooms/${code}/chats`);
+      onValue(chatRefObj, (snapshot) => {
         const roomChatMsgs = document.getElementById('room-chat-messages');
         const gameChatMsgs = document.getElementById('game-chat-messages');
 
