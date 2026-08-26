@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 完全修正版</title>
+  <title>猜歌小遊戲 - 完全修復終極版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -33,6 +33,7 @@
     button.secondary:hover { background-color: #444; }
     button.ready-active { background-color: #2196F3; }
 
+    /* 房間大廳樣式 */
     #room-view {
       width: 100%; max-width: 900px; min-height: 90vh; display: flex; flex-direction: column;
       gap: 15px; padding: 15px; background-color: rgba(18, 18, 18, 0.9); border-radius: 12px;
@@ -45,11 +46,11 @@
     
     .room-main-content { display: flex; gap: 15px; flex-wrap: wrap; }
     .room-left { flex: 2; min-width: 280px; display: flex; flex-direction: column; gap: 15px; }
-    .room-right { flex: 1; min-width: 220px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; }
+    .room-right { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 15px; }
 
     .players-container {
       display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
-      padding: 10px; background-color: rgba(255, 255, 255, 0.05); border-radius: 8px; max-height: 200px; overflow-y: auto;
+      padding: 10px; background-color: rgba(255, 255, 255, 0.05); border-radius: 8px; max-height: 180px; overflow-y: auto;
     }
     .player-card {
       position: relative; background-color: rgba(255, 255, 255, 0.1); border: 1px dashed rgba(255, 255, 255, 0.3);
@@ -64,24 +65,15 @@
     .setting-title { font-weight: bold; min-width: 100px; }
     .range-group { display: flex; align-items: center; gap: 10px; flex: 1; }
     .range-group input[type="range"] { flex: 1; }
-    
-    /* 修正2：徹底封鎖手機非房主的觸控與修改權限 */
-    .range-group input[type="range"]:disabled {
-      pointer-events: none !important;
-      touch-action: none !important;
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+    .range-group input[type="range"]:disabled { pointer-events: none !important; opacity: 0.4; cursor: not-allowed; }
 
-    /* 修正1：遊戲面板與聊天室 Flex 排版重構，確保聊天室必定顯示 */
+    /* 遊戲畫面樣式 */
     #game-view {
       width: 100%; max-width: 800px; height: 95vh; display: flex; flex-direction: column;
       gap: 10px; padding: 15px; background: #1e1e1e; border-radius: 12px;
       overflow: hidden; justify-content: space-between;
     }
-    .game-main-area {
-      flex: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-height: 0;
-    }
+    .game-main-area { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-height: 0; }
     .game-scoreboard {
       width: 100%; background: #2a2a2a; border: 2px solid #1db954; border-radius: 8px; padding: 10px;
       display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
@@ -100,10 +92,10 @@
       padding: 12px; font-size: 16px; text-align: center; display: flex; align-items: center; justify-content: center;
     }
 
-    /* 修正1：聊天室顯示區域獨立固化 */
+    /* 聊天室通用樣式 (房間與遊戲共用) */
     .chat-box-container {
       width: 100%; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 10px;
-      display: flex; flex-direction: column; gap: 6px; height: 160px; flex-shrink: 0; margin-top: auto;
+      display: flex; flex-direction: column; gap: 6px; height: 180px; flex-shrink: 0;
     }
     .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
     .chat-msg { word-break: break-all; }
@@ -111,6 +103,7 @@
     .chat-msg.system { color: #ff9800; font-style: italic; }
     .chat-input-row { display: flex; gap: 8px; }
 
+    /* 彈窗樣式 */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background-color: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 9999;
@@ -123,11 +116,13 @@
 </head>
 <body>
 
+  <!-- 首頁 -->
   <div id="main-screen" class="screen">
     <button id="start-btn">開始</button>
     <button id="about-btn" class="secondary">關於</button>
   </div>
 
+  <!-- 建立/加入房間選擇頁面 -->
   <div id="room-screen" class="screen hidden">
     <div class="input-group">
       <label>請輸入名字：</label>
@@ -135,8 +130,11 @@
     </div>
     <button id="create-room-btn">創建房間</button>
     <button id="join-room-btn" class="secondary">加入房間</button>
+    <!-- 需求3：新增返回首頁按鈕 -->
+    <button id="back-to-main-from-room-btn" class="secondary" style="background-color: #444;">返回首頁</button>
   </div>
 
+  <!-- 輸入房間代碼頁面 -->
   <div id="join-code-screen" class="screen hidden">
     <div class="input-group">
       <label>房間代碼：</label>
@@ -145,8 +143,11 @@
     <div id="join-error-msg" style="color:red; font-size:14px;"></div>
     <button id="submit-code-btn">確定進入</button>
     <button id="back-to-room-screen-btn" class="secondary">返回</button>
+    <!-- 需求3：新增返回首頁按鈕 -->
+    <button id="back-to-main-from-code-btn" class="secondary" style="background-color: #444;">返回首頁</button>
   </div>
 
+  <!-- 房間大廳畫面 (需求1：內含聊天室) -->
   <div id="room-view" class="hidden">
     <div class="top-bar">
       <button class="back-btn" id="leave-room-btn">↩</button>
@@ -201,14 +202,60 @@
       </div>
 
       <div class="room-right">
-        <div class="win-board-title" style="font-size:18px; font-weight:bold; color:#ffd700; margin-bottom:10px; text-align:center;">🏆 累積勝場榜</div>
-        <ul class="win-board-list" id="win-board-list" style="list-style:none; display:flex; flex-direction:column; gap:8px;">
-          <li style="text-align:center; opacity:0.5;">尚無戰績</li>
-        </ul>
+        <!-- 累積勝場榜 -->
+        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+          <div style="font-size:16px; font-weight:bold; color:#ffd700; margin-bottom:8px; text-align:center;">🏆 累積勝場榜</div>
+          <ul class="win-board-list" id="win-board-list" style="list-style:none; display:flex; flex-direction:column; gap:6px;">
+            <li style="text-align:center; opacity:0.5; font-size:13px;">尚無戰績</li>
+          </ul>
+        </div>
+
+        <!-- 需求1：房間大廳聊天室 -->
+        <div class="chat-box-container" style="flex:1;">
+          <div class="chat-messages" id="room-chat-messages"></div>
+          <div class="chat-input-row">
+            <input type="text" id="room-chat-input" placeholder="房間聊天..." style="font-size:13px; padding:6px 8px;">
+            <button id="room-send-chat-btn" style="width:60px; font-size:13px; padding:6px;">發送</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- 需求2：關於我們彈窗 (支援兩頁切換) -->
+  <div id="about-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <!-- 第一頁 -->
+      <div id="about-page-1">
+        <h2 style="color:#1db954; margin-bottom:12px;">關於作者</h2>
+        <div style="text-align: left; line-height: 1.6; font-size:15px; background:#121212; padding:15px; border-radius:8px; border:1px solid #333;">
+          <p><b>製作者：</b>墨寒</p>
+          <p><b>協助者：</b>gemini</p>
+          <br>
+          <p><b>作者的一些話：</b><br>祝各位玩得開心 這是我第一次嘗試製作遊戲 主要也是跟朋友同樂~有bug的問題可傳信箱給我 我的信箱為：<a href="mailto:shn20060401@gmail.com" style="color:#00d2ff;">shn20060401@gmail.com</a> 作者在這裡祝大家順心快樂平安~</p>
+        </div>
+        <button id="about-next-btn" style="margin-top:15px;">下一頁</button>
+      </div>
+
+      <!-- 第二頁 -->
+      <div id="about-page-2" class="hidden">
+        <h2 style="color:#1db954; margin-bottom:12px;">遊戲說明與規則</h2>
+        <div style="text-align: left; line-height: 1.6; font-size:14px; background:#121212; padding:15px; border-radius:8px; border:1px solid #333;">
+          <p><b>遊戲規則：</b></p>
+          <ul style="margin-left:20px; margin-bottom:10px;">
+            <li>建立或加入房間後即可開始對局。</li>
+            <li>根據系統提示在指定時間內進行猜題與回答。</li>
+            <li>答對速度越快得分越高，回合結束後結算總分排名。</li>
+          </ul>
+          <p><b>系統說明：</b>建議使用最新版 Chrome以獲得最佳遊戲體驗。</p>
+          <p><b>版本資訊：</b>v1.0.0</p>
+        </div>
+        <button id="about-close-btn" class="secondary" style="margin-top:15px;">返回首頁</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 玩法介紹彈窗 (進入遊戲前) -->
   <div id="intro-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <h2>歌詞猜謎 - 玩法介紹</h2>
@@ -221,6 +268,7 @@
     </div>
   </div>
 
+  <!-- 遊戲對局畫面 -->
   <div id="game-view" class="hidden">
     <div class="game-main-area">
       <div class="game-scoreboard">
@@ -247,16 +295,17 @@
       </div>
     </div>
 
-    <!-- 聊天室區塊 -->
+    <!-- 遊戲中聊天室 -->
     <div class="chat-box-container">
-      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-messages" id="game-chat-messages"></div>
       <div class="chat-input-row">
-        <input type="text" id="chat-input" placeholder="輸入聊天內容..." style="font-size:14px; padding:6px 10px;">
-        <button id="send-chat-btn" style="width:70px; font-size:14px; padding:6px;">發送</button>
+        <input type="text" id="game-chat-input" placeholder="聊天室搶答或發言..." style="font-size:14px; padding:6px 10px;">
+        <button id="game-send-chat-btn" style="width:70px; font-size:14px; padding:6px;">發送</button>
       </div>
     </div>
   </div>
 
+  <!-- 結算彈窗 -->
   <div id="result-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <h2>🎉 遊戲結束 - 最終結算</h2>
@@ -295,6 +344,7 @@
     let isSelfLeaving = false;
     let timerInterval = null;
 
+    // DOM 元素引用
     const mainScreen = document.getElementById('main-screen');
     const roomScreen = document.getElementById('room-screen');
     const joinCodeScreen = document.getElementById('join-code-screen');
@@ -302,12 +352,14 @@
     const gameView = document.getElementById('game-view');
     const introModal = document.getElementById('intro-modal');
     const resultModal = document.getElementById('result-modal');
+    const aboutModal = document.getElementById('about-modal');
 
-    const leaveRoomBtn = document.getElementById('leave-room-btn');
     const startBtn = document.getElementById('start-btn');
+    const aboutBtn = document.getElementById('about-btn');
     const createRoomBtn = document.getElementById('create-room-btn');
     const joinRoomBtn = document.getElementById('join-room-btn');
     const submitCodeBtn = document.getElementById('submit-code-btn');
+    const leaveRoomBtn = document.getElementById('leave-room-btn');
     const mainActionBtn = document.getElementById('main-action-btn');
     const confirmIntroBtn = document.getElementById('confirm-intro-btn');
     const submitQuestionBtn = document.getElementById('submit-question-btn');
@@ -318,10 +370,6 @@
     const winScoreRange = document.getElementById('win-score-range');
     const makerTimeRange = document.getElementById('maker-time-range');
     const guessTimeRange = document.getElementById('guess-time-range');
-
-    const chatInput = document.getElementById('chat-input');
-    const sendChatBtn = document.getElementById('send-chat-btn');
-    const chatMessages = document.getElementById('chat-messages');
 
     function filterBadWords(text) {
       let filtered = text;
@@ -343,22 +391,53 @@
       return (str || "").toLowerCase().replace(/\s+/g, '');
     }
 
-    // 修正2：嚴格管控設定修改權限
-    function toggleSettingsPermission() {
-      const inputs = [playerLimitRange, winScoreRange, makerTimeRange, guessTimeRange];
-      inputs.forEach(input => {
-        input.disabled = !isHost;
-      });
+    // 需求4關鍵修復：完全清除所有計時器
+    function stopAllTimers() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      document.getElementById('game-timer').innerText = "--";
     }
 
-    [playerLimitRange, winScoreRange, makerTimeRange, guessTimeRange].forEach(input => {
-      input.addEventListener('input', (e) => {
-        if (!isHost) {
-          e.preventDefault();
-          return false;
-        }
-      });
+    // 需求2：關於我們彈窗邏輯
+    aboutBtn.addEventListener('click', () => {
+      document.getElementById('about-page-1').classList.remove('hidden');
+      document.getElementById('about-page-2').classList.add('hidden');
+      aboutModal.classList.remove('hidden');
     });
+
+    document.getElementById('about-next-btn').addEventListener('click', () => {
+      document.getElementById('about-page-1').classList.add('hidden');
+      document.getElementById('about-page-2').classList.remove('hidden');
+    });
+
+    document.getElementById('about-close-btn').addEventListener('click', () => {
+      aboutModal.classList.add('hidden');
+    });
+
+    // 需求3：返回首頁按鈕事件
+    function backToMainMenu() {
+      stopAllTimers();
+      if (roomListenerRef) { off(roomListenerRef); roomListenerRef = null; }
+      if (chatListenerRef) { off(chatListenerRef); chatListenerRef = null; }
+      currentActiveRoomCode = "";
+      
+      roomScreen.classList.add('hidden');
+      joinCodeScreen.classList.add('hidden');
+      roomView.classList.add('hidden');
+      gameView.classList.add('hidden');
+      aboutModal.classList.add('hidden');
+      mainScreen.classList.remove('hidden');
+    }
+
+    document.getElementById('back-to-main-from-room-btn').addEventListener('click', backToMainMenu);
+    document.getElementById('back-to-main-from-code-btn').addEventListener('click', backToMainMenu);
+
+    function toggleSettingsPermission() {
+      const inputs = [playerLimitRange, winScoreRange, makerTimeRange, guessTimeRange];
+      inputs.forEach(input => { input.disabled = !isHost; });
+    }
 
     playerLimitRange.addEventListener('change', (e) => {
       if (!isHost) return;
@@ -385,6 +464,7 @@
     });
 
     function showRoomSelectionScreen() {
+      stopAllTimers();
       if (roomListenerRef) { off(roomListenerRef); roomListenerRef = null; }
       if (chatListenerRef) { off(chatListenerRef); chatListenerRef = null; }
       currentActiveRoomCode = "";
@@ -403,13 +483,13 @@
 
     async function leaveRoom() {
       isSelfLeaving = true;
+      stopAllTimers();
       const targetRoomCode = currentActiveRoomCode;
       const leavingUser = myPlayerName;
       showRoomSelectionScreen();
 
       if (targetRoomCode) {
         sendChatMessage(`玩家 [${leavingUser}] 退出遊戲`, true);
-
         activePlayers = activePlayers.filter(p => p.name !== leavingUser);
         if (activePlayers.length > 0) {
           if (isHost) activePlayers[0].isHost = true;
@@ -420,7 +500,6 @@
       }
     }
 
-    // 修正4：監聽連線狀態，重新整理或離線時自動刪除玩家，解決殘影與退房問題
     function setupOnDisconnect(roomCode) {
       const myRef = ref(db, `rooms/${roomCode}`);
       onValue(ref(db, ".info/connected"), async (snap) => {
@@ -429,8 +508,6 @@
           if (roomSnap.exists()) {
             let pList = roomSnap.val().players || [];
             pList = pList.filter(p => p.name !== myPlayerName);
-            
-            // 設定斷線自動處理邏輯
             if (pList.length === 0) {
               onDisconnect(myRef).remove();
             } else {
@@ -467,13 +544,10 @@
           if (!isHost) {
             playerLimitRange.value = roomData.maxPlayers || 16;
             document.getElementById('player-limit-val').innerText = playerLimitRange.value;
-
             winScoreRange.value = roomData.winScore || 5;
             document.getElementById('win-score-val').innerText = winScoreRange.value + "分";
-
             makerTimeRange.value = roomData.makerTime || 30;
             document.getElementById('maker-time-val').innerText = makerTimeRange.value + "秒";
-
             guessTimeRange.value = roomData.guessTime || 60;
             document.getElementById('guess-time-val').innerText = guessTimeRange.value + "秒";
           }
@@ -491,11 +565,16 @@
       listenToChat(roomCode);
     }
 
+    // 需求1：房間與遊戲共用聊天室監聽與渲染
     function listenToChat(roomCode) {
       if (chatListenerRef) off(chatListenerRef);
       chatListenerRef = ref(db, `chats/${roomCode}`);
       onValue(chatListenerRef, (snapshot) => {
-        chatMessages.innerHTML = "";
+        const roomChatMessages = document.getElementById('room-chat-messages');
+        const gameChatMessages = document.getElementById('game-chat-messages');
+        roomChatMessages.innerHTML = "";
+        gameChatMessages.innerHTML = "";
+
         if (snapshot.exists()) {
           const messages = snapshot.val();
           Object.values(messages).forEach(msg => {
@@ -507,9 +586,11 @@
               div.className = "chat-msg";
               div.innerHTML = `<span class="author">${msg.sender}:</span> ${msg.text}`;
             }
-            chatMessages.appendChild(div);
+            roomChatMessages.appendChild(div.cloneNode(true));
+            gameChatMessages.appendChild(div);
           });
-          chatMessages.scrollTop = chatMessages.scrollHeight;
+          roomChatMessages.scrollTop = roomChatMessages.scrollHeight;
+          gameChatMessages.scrollTop = gameChatMessages.scrollHeight;
         }
       });
     }
@@ -526,14 +607,30 @@
       });
     }
 
-    sendChatBtn.addEventListener('click', () => {
-      sendChatMessage(chatInput.value);
-      chatInput.value = "";
+    // 綁定房間與遊戲聊天室事件
+    document.getElementById('room-send-chat-btn').addEventListener('click', () => {
+      const input = document.getElementById('room-chat-input');
+      sendChatMessage(input.value);
+      input.value = "";
     });
-    chatInput.addEventListener('keypress', (e) => {
+    document.getElementById('room-chat-input').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        sendChatMessage(chatInput.value);
-        chatInput.value = "";
+        const input = document.getElementById('room-chat-input');
+        sendChatMessage(input.value);
+        input.value = "";
+      }
+    });
+
+    document.getElementById('game-send-chat-btn').addEventListener('click', () => {
+      const input = document.getElementById('game-chat-input');
+      sendChatMessage(input.value);
+      input.value = "";
+    });
+    document.getElementById('game-chat-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const input = document.getElementById('game-chat-input');
+        sendChatMessage(input.value);
+        input.value = "";
       }
     });
 
@@ -594,12 +691,12 @@
       list.innerHTML = "";
       const sorted = Object.entries(winBoard).sort((a, b) => b[1] - a[1]);
       if (sorted.length === 0) {
-        list.innerHTML = `<li style="text-align:center; opacity:0.5;">尚無戰績</li>`;
+        list.innerHTML = `<li style="text-align:center; opacity:0.5; font-size:13px;">尚無戰績</li>`;
         return;
       }
       sorted.forEach(([name, count]) => {
         const li = document.createElement('li');
-        li.style.cssText = "display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.1); border-radius:4px;";
+        li.style.cssText = "display:flex; justify-content:space-between; padding:6px; background:rgba(255,255,255,0.1); border-radius:4px; font-size:13px;";
         li.innerHTML = `<span>${name}</span><span style="color:#ffd700; font-weight:bold;">${count} 勝</span>`;
         list.appendChild(li);
       });
@@ -668,7 +765,6 @@
           alert("至少需要 2 名玩家才能開始遊戲！");
           return;
         }
-
         const unreadyPlayers = activePlayers.filter(p => !p.isHost && !p.isReady);
         if (unreadyPlayers.length > 0) {
           alert(`還有玩家未準備：${unreadyPlayers.map(p => p.name).join(', ')}`);
@@ -711,7 +807,6 @@
 
       const rankBoard = document.getElementById('game-rank-board');
       rankBoard.innerHTML = "";
-
       const sortedPlayers = [...roomData.players].sort((a, b) => (b.score || 0) - (a.score || 0));
 
       sortedPlayers.forEach((p, index) => {
@@ -727,21 +822,20 @@
       });
     }
 
-    // 修正3：遊戲狀態處理器，徹底分離遊戲結束與續局階段
+    // 需求4關鍵修復：狀態控制器與防拉回邏輯
     function handleGameState(roomData) {
       const state = roomData.gameState;
 
       if (state === 'LOBBY') {
+        stopAllTimers(); // 回到房間時立即強制清除計時
         roomView.classList.remove('hidden');
         gameView.classList.add('hidden');
         introModal.classList.add('hidden');
         resultModal.classList.add('hidden');
-        clearInterval(timerInterval);
       } 
       else if (state === 'INTRO') {
         roomView.classList.add('hidden');
         introModal.classList.remove('hidden');
-        
         const readyCount = roomData.players.filter(p => p.introReady).length;
         document.getElementById('ready-count').innerText = readyCount;
         document.getElementById('total-count').innerText = roomData.players.length;
@@ -759,7 +853,6 @@
         gameView.classList.remove('hidden');
         
         renderScoreboard(roomData);
-
         const currentMaker = roomData.players[roomData.currentMakerIndex];
         const isMaker = currentMaker && currentMaker.name === myPlayerName;
 
@@ -820,9 +913,7 @@
         });
       }
       else if (state === 'ENDED') {
-        // 修正3：遊戲結束時徹底終止所有計時並切換結算彈窗
-        clearInterval(timerInterval);
-        document.getElementById('game-timer').innerText = "--";
+        stopAllTimers(); // 遊戲結束立即終止計時
         document.getElementById('maker-panel').classList.add('hidden');
         document.getElementById('guesser-panel').classList.add('hidden');
         gameView.classList.add('hidden');
@@ -834,7 +925,6 @@
     submitQuestionBtn.addEventListener('click', async () => {
       const rawAns = document.getElementById('maker-ans-input').value.trim();
       const rawLyrics = document.getElementById('maker-lyrics-input').value.trim();
-
       const ans = filterBadWords(rawAns);
       const lyrics = filterBadWords(rawLyrics);
 
@@ -865,7 +955,6 @@
 
       if (cleanString(guess) === cleanString(roomData.currentAnswer)) {
         document.getElementById('guess-input').value = "";
-        
         await runTransaction(ref(db, `rooms/${currentActiveRoomCode}`), (room) => {
           if (room && room.gameState === 'GUESSING') {
             room.gameState = 'ROUND_OVER';
@@ -888,11 +977,9 @@
       if (e.key === 'Enter') checkGuess();
     });
 
-    // 修正3：判斷勝負邏輯與防強拉回機制
     async function nextRound(roomData, announceMsg) {
       if (!isHost) return;
-
-      clearInterval(timerInterval);
+      stopAllTimers();
       alert(announceMsg);
 
       const winScore = roomData.winScore || 5;
@@ -902,7 +989,6 @@
         const winBoard = roomData.winBoard || {};
         winBoard[winner.name] = (winBoard[winner.name] || 0) + 1;
 
-        // 當已有玩家達標，立刻寫入 ENDED 狀態，阻斷續局
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
           gameState: 'ENDED',
           winBoard: winBoard
@@ -918,12 +1004,11 @@
     }
 
     function startTimer(endTime, onComplete) {
-      clearInterval(timerInterval);
+      stopAllTimers();
       timerInterval = setInterval(() => {
         const remain = Math.ceil((endTime - Date.now()) / 1000);
         if (remain <= 0) {
-          clearInterval(timerInterval);
-          document.getElementById('game-timer').innerText = "0s";
+          stopAllTimers();
           if (onComplete) onComplete();
         } else {
           document.getElementById('game-timer').innerText = remain + "s";
@@ -957,10 +1042,6 @@
     startBtn.addEventListener('click', () => {
       mainScreen.classList.add('hidden');
       roomScreen.classList.remove('hidden');
-    });
-
-    document.getElementById('about-btn').addEventListener('click', () => {
-      alert('製作者：墨寒\n協助者：gemini\n信箱：shn20060401@gmail.com');
     });
 
     document.getElementById('back-to-room-screen-btn').addEventListener('click', () => {
