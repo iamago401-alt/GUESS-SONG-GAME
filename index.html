@@ -369,7 +369,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, child, update, onValue, off } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Firebase 配置設定 (已修復亞洲區資料庫網址)
+    // Firebase 配置設定
     const firebaseConfig = {
       apiKey: "AIzaSyCQU8dwFwXaogwRdDsnNHHyYKbxxxTifJY",
       authDomain: "gurss-song.firebaseapp.com",
@@ -444,7 +444,15 @@
         if (snapshot.exists()) {
           const roomData = snapshot.val();
           activePlayers = roomData.players || [];
-          
+
+          // Bug 2 修正：檢查自己是否仍在玩家列表內，若不在（被踢出）則自動回到房間選單
+          const stillInRoom = activePlayers.some(p => p.name === myPlayerName);
+          if (!stillInRoom) {
+            alert("你已被房主踢出房間！");
+            resetToRoomScreen();
+            return;
+          }
+
           if (!isHost && roomData.maxPlayers) {
             playerLimitRange.value = roomData.maxPlayers;
             playerLimitVal.innerText = roomData.maxPlayers;
@@ -455,7 +463,7 @@
           updateActionButton();
         } else {
           alert("房間已關閉");
-          leaveRoom();
+          resetToRoomScreen();
         }
       });
     }
@@ -520,6 +528,14 @@
           mainActionBtn.classList.remove('ready-active');
         }
       }
+    }
+
+    // 重置並回到進入房間選單
+    function resetToRoomScreen() {
+      if (roomListener) off(roomListener);
+      currentActiveRoomCode = "";
+      roomView.classList.add('hidden');
+      roomScreen.classList.remove('hidden');
     }
 
     // 點擊「開始遊戲 / 準備」
@@ -637,10 +653,8 @@
       }
     });
 
-    // 離開房間
+    // Bug 1 修正：點擊左上角↩返回按鈕離開房間
     async function leaveRoom() {
-      if (roomListener) off(roomListener);
-
       if (currentActiveRoomCode) {
         activePlayers = activePlayers.filter(p => p.name !== myPlayerName);
         if (activePlayers.length > 0) {
@@ -653,8 +667,7 @@
         }
       }
 
-      roomView.classList.add('hidden');
-      roomScreen.classList.remove('hidden');
+      resetToRoomScreen();
     }
 
     leaveRoomBtn.addEventListener('click', leaveRoom);
@@ -707,7 +720,7 @@
 
     themeDarkBtn.addEventListener('click', () => {
       settingsPanel.classList.remove('light');
-      settingsPanel.classList.add('dark');
+      settingsPanel.classList.dark('dark');
     });
   </script>
 
