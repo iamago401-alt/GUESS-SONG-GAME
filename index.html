@@ -369,11 +369,11 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, child, update, onValue, off } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Firebase 配置設定
+    // Firebase 配置設定 (已修復亞洲區資料庫網址)
     const firebaseConfig = {
       apiKey: "AIzaSyCQU8dwFwXaogwRdDsnNHHyYKbxxxTifJY",
       authDomain: "gurss-song.firebaseapp.com",
-      databaseURL: "https://gurss-song-default-rtdb.firebaseio.com",
+      databaseURL: "https://gurss-song-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "gurss-song",
       storageBucket: "gurss-song.firebasestorage.app",
       messagingSenderId: "1014713355425",
