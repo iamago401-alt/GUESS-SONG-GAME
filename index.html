@@ -296,7 +296,8 @@
     
     <!-- 上層板塊 -->
     <div class="top-bar">
-      <button class="back-btn" id="leave-room-btn" title="返回">↩</button>
+      <!-- 直接綁定 onclick 事件，確保退房功能 100% 觸發 -->
+      <button class="back-btn" id="leave-room-btn" onclick="leaveRoom()" title="返回">↩</button>
       <div class="player-count-display">
         👥 <span id="current-players">1</span>/<span id="max-players">16</span>
       </div>
@@ -405,7 +406,6 @@
     const joinRoomBtn = document.getElementById('join-room-btn');
     const submitCodeBtn = document.getElementById('submit-code-btn');
     const backToRoomScreenBtn = document.getElementById('back-to-room-screen-btn');
-    const leaveRoomBtn = document.getElementById('leave-room-btn');
     const toggleCodeBtn = document.getElementById('toggle-code-btn');
 
     const roomCodeInput = document.getElementById('room-code-input');
@@ -443,14 +443,33 @@
       }
       currentActiveRoomCode = "";
 
-      // 隱藏其他所有畫面
+      // 隱藏其他所有畫面，顯示創建/加入房間選單
       mainScreen.classList.add('hidden');
       joinCodeScreen.classList.add('hidden');
       roomView.classList.add('hidden');
-
-      // 顯示包含「創建房間/加入房間」按鈕的選單
       roomScreen.classList.remove('hidden');
     }
+
+    // 離開房間函式（綁定全域，讓 HTML 隨時可呼叫）
+    window.leaveRoom = async function() {
+      const targetRoomCode = currentActiveRoomCode;
+      
+      // 先強制切換畫面，提升反應速度
+      showRoomSelectionScreen();
+
+      if (targetRoomCode) {
+        activePlayers = activePlayers.filter(p => p.name !== myPlayerName);
+
+        if (activePlayers.length > 0) {
+          if (isHost) activePlayers[0].isHost = true;
+          await update(ref(db, 'rooms/' + targetRoomCode), {
+            players: activePlayers
+          });
+        } else {
+          await set(ref(db, 'rooms/' + targetRoomCode), null);
+        }
+      }
+    };
 
     // 即時監聽雲端房間變化
     function listenToRoom(roomCode) {
@@ -661,27 +680,6 @@
         submitCodeBtn.disabled = false;
       }
     });
-
-    // 點擊左上角 ↩ 返回按鈕（主動退出房間）
-    async function leaveRoom() {
-      if (currentActiveRoomCode) {
-        const roomCodeToLeave = currentActiveRoomCode;
-        activePlayers = activePlayers.filter(p => p.name !== myPlayerName);
-
-        if (activePlayers.length > 0) {
-          if (isHost) activePlayers[0].isHost = true;
-          await update(ref(db, 'rooms/' + roomCodeToLeave), {
-            players: activePlayers
-          });
-        } else {
-          await set(ref(db, 'rooms/' + roomCodeToLeave), null);
-        }
-      }
-
-      showRoomSelectionScreen();
-    }
-
-    leaveRoomBtn.addEventListener('click', leaveRoom);
 
     startBtn.addEventListener('click', () => {
       mainScreen.classList.add('hidden');
