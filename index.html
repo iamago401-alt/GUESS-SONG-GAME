@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 最終防錯完整版</title>
+  <title>猜歌小遊戲 - 最終穩定版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -68,12 +68,11 @@
     .ready-tag { color: #00d2ff; font-weight: bold; font-size: 14px; }
     .kick-btn { background: none; border: none; color: #ff4d4d; font-size: 16px; font-weight: bold; cursor: pointer; width: auto; }
 
-    #room-view .settings-container, div.settings-container {
-      padding: 15px !important; border-radius: 8px !important; background-color: #000000 !important;
-      color: #ffffff !important; border: 2px solid #ffffff !important;
-      display: flex !important; flex-direction: column !important; gap: 12px !important;
+    .settings-container {
+      padding: 15px; border-radius: 8px; background-color: #000000;
+      color: #ffffff; border: 2px solid #ffffff;
+      display: flex; flex-direction: column; gap: 12px;
     }
-    .settings-container *, .settings-container .setting-title, .settings-container .range-group { color: #ffffff !important; }
     .setting-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .setting-title { font-weight: bold; min-width: 100px; }
     .range-group { display: flex; align-items: center; gap: 10px; flex: 1; }
@@ -317,7 +316,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, update, onValue, off, push, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, update, onValue, push, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCQU8dwFwXaogwRdDsnNHHyYKbxxxTifJY",
@@ -340,8 +339,6 @@
     let isHost = false;
     let myPlayerName = "";
     let activePlayers = [];
-    let roomRefObj = null;
-    let chatRefObj = null;
     let isSelfLeaving = false;
     let timerInterval = null;
 
@@ -422,14 +419,6 @@
 
     function resetRoomState() {
       stopAllTimers();
-      if (roomRefObj) { 
-        try { off(roomRefObj); } catch(e){} 
-        roomRefObj = null; 
-      }
-      if (chatRefObj) { 
-        try { off(chatRefObj); } catch(e){} 
-        chatRefObj = null; 
-      }
       currentActiveRoomCode = "";
       
       mainScreen.classList.add('hidden');
@@ -568,8 +557,7 @@
 
     function listenToRoomData(code) {
       if (!code) return;
-      roomRefObj = ref(db, `rooms/${code}`);
-      onValue(roomRefObj, (snapshot) => {
+      onValue(ref(db, `rooms/${code}`), (snapshot) => {
         if (isSelfLeaving) return;
 
         if (!snapshot.exists()) {
@@ -581,7 +569,6 @@
         const data = snapshot.val();
         activePlayers = Object.keys(data.players || {});
 
-        // 房主轉移
         if (!data.players[data.host] && activePlayers.length > 0) {
           const newHost = activePlayers[0];
           update(ref(db, `rooms/${code}`), { host: newHost });
@@ -700,7 +687,6 @@
           confirmIntroBtn.innerText = `確認 (${readyCount}/${activePlayers.length})`;
         }
 
-        // 嚴格由房主端判定全部確認後推進到 playing 狀態
         if (isHost && readyCount >= activePlayers.length && activePlayers.length > 0) {
           const makerTimeSec = data.makerTime || 30;
           update(ref(db, `rooms/${currentActiveRoomCode}`), {
@@ -783,7 +769,6 @@
         }
       }
 
-      // 計時器邏輯
       stopAllTimers();
       if (data.timerEndTime) {
         const updateTimer = () => {
@@ -817,7 +802,6 @@
       });
     }
 
-    // 嚴格防呆防錯的玩法確認按鈕
     confirmIntroBtn.addEventListener('click', async () => {
       if (!currentActiveRoomCode || !myPlayerName) {
         alert("連線狀態異常，請重新加入房間！");
@@ -1022,8 +1006,7 @@
 
     function listenToChat(code) {
       if (!code) return;
-      chatRefObj = ref(db, `rooms/${code}/chats`);
-      onValue(chatRefObj, (snapshot) => {
+      onValue(ref(db, `rooms/${code}/chats`), (snapshot) => {
         const roomChatMsgs = document.getElementById('room-chat-messages');
         const gameChatMsgs = document.getElementById('game-chat-messages');
 
