@@ -270,7 +270,7 @@
     <button id="about-btn" class="secondary">關於</button>
   </div>
 
-  <!-- 第二頁：進入房間選單 -->
+  <!-- 第二頁：進入房間選單（創建/加入房間） -->
   <div id="room-screen" class="screen hidden">
     <div class="input-group">
       <label for="username">請輸入名字：</label>
@@ -391,7 +391,7 @@
     let isHost = true;
     let myPlayerName = "";
     let activePlayers = [];
-    let roomListener = null;
+    let roomListenerRef = null;
 
     // DOM 元素引用
     const mainScreen = document.getElementById('main-screen');
@@ -435,33 +435,39 @@
       return code;
     }
 
-    // 重置畫面，直接回到「創建 / 加入房間」畫面
-    function resetToRoomScreen() {
-      if (roomListener) off(roomListener);
+    // 重置並強制切換回「創建/加入房間」選單頁面
+    function showRoomSelectionScreen() {
+      if (roomListenerRef) {
+        off(roomListenerRef);
+        roomListenerRef = null;
+      }
       currentActiveRoomCode = "";
-      
-      // 隱藏房間視窗與輸入代碼頁面
-      roomView.classList.add('hidden');
+
+      // 隱藏其他所有畫面
+      mainScreen.classList.add('hidden');
       joinCodeScreen.classList.add('hidden');
-      
-      // 顯示創建 / 加入房間頁面
+      roomView.classList.add('hidden');
+
+      // 顯示包含「創建房間/加入房間」按鈕的選單
       roomScreen.classList.remove('hidden');
     }
 
     // 即時監聽雲端房間變化
     function listenToRoom(roomCode) {
-      if (roomListener) off(roomListener);
+      if (roomListenerRef) {
+        off(roomListenerRef);
+      }
 
-      const roomRef = ref(db, 'rooms/' + roomCode);
-      roomListener = onValue(roomRef, (snapshot) => {
+      roomListenerRef = ref(db, 'rooms/' + roomCode);
+      onValue(roomListenerRef, (snapshot) => {
         if (snapshot.exists()) {
           const roomData = snapshot.val();
           activePlayers = roomData.players || [];
 
-          // 檢查自己是否還在列表中（不在代表被踢了），無提示直接跳回選單
+          // 判斷是否還在房間裡面，不在（被踢出）則立刻導回選單
           const stillInRoom = activePlayers.some(p => p.name === myPlayerName);
           if (!stillInRoom) {
-            resetToRoomScreen();
+            showRoomSelectionScreen();
             return;
           }
 
@@ -474,8 +480,7 @@
           renderPlayers();
           updateActionButton();
         } else {
-          // 房間被刪除，直接跳回選單
-          resetToRoomScreen();
+          showRoomSelectionScreen();
         }
       });
     }
@@ -586,7 +591,7 @@
       }
     });
 
-    // 點擊「加入房間」
+    // 點擊「加入房間」按鈕（展開代碼輸入頁）
     joinRoomBtn.addEventListener('click', () => {
       roomCodeInput.value = "";
       joinErrorMsg.innerText = "";
@@ -598,7 +603,7 @@
       e.target.value = e.target.value.replace(/\s+/g, '').toUpperCase();
     });
 
-    // 跨裝置驗證代碼並進入房間
+    // 驗證代碼並進入房間
     submitCodeBtn.addEventListener('click', async () => {
       const inputCode = roomCodeInput.value.trim().replace(/\s+/g, '').toUpperCase();
       myPlayerName = document.getElementById('username').value.trim() || "玩家2";
@@ -657,21 +662,23 @@
       }
     });
 
-    // 主動點擊左上角 ↩ 返回按鈕
+    // 點擊左上角 ↩ 返回按鈕（主動退出房間）
     async function leaveRoom() {
       if (currentActiveRoomCode) {
+        const roomCodeToLeave = currentActiveRoomCode;
         activePlayers = activePlayers.filter(p => p.name !== myPlayerName);
+
         if (activePlayers.length > 0) {
           if (isHost) activePlayers[0].isHost = true;
-          await update(ref(db, 'rooms/' + currentActiveRoomCode), {
+          await update(ref(db, 'rooms/' + roomCodeToLeave), {
             players: activePlayers
           });
         } else {
-          await set(ref(db, 'rooms/' + currentActiveRoomCode), null);
+          await set(ref(db, 'rooms/' + roomCodeToLeave), null);
         }
       }
 
-      resetToRoomScreen();
+      showRoomSelectionScreen();
     }
 
     leaveRoomBtn.addEventListener('click', leaveRoom);
