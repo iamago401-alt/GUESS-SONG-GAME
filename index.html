@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 完全修復終極版</title>
+  <title>猜歌小遊戲 - 完整修復版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -122,8 +122,6 @@
     .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
     .chat-msg { word-break: break-all; }
     .chat-msg .author { font-weight: bold; color: #1db954; }
-    .chat-msg.system { color: #ff9800; font-style: italic; }
-    .chat-input-row { display: flex; gap: 8px; }
 
     /* 彈窗樣式 */
     .modal-overlay {
@@ -348,7 +346,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, child, update, onValue, off, push, runTransaction, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, update, onValue, off, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCQU8dwFwXaogwRdDsnNHHyYKbxxxTifJY",
@@ -373,8 +371,6 @@
     let activePlayers = [];
     let roomListenerRef = null;
     let chatListenerRef = null;
-    let isSelfLeaving = false;
-    let timerInterval = null;
 
     // DOM 元素引用
     const mainScreen = document.getElementById('main-screen');
@@ -403,7 +399,6 @@
     const makerTimeRange = document.getElementById('maker-time-range');
     const guessTimeRange = document.getElementById('guess-time-range');
 
-    // 新增：調色盤與面板風格 DOM
     const roomBgPicker = document.getElementById('room-bg-picker');
     const settingsContainer = document.getElementById('settings-container');
     const togglePanelThemeBtn = document.getElementById('toggle-panel-theme-btn');
@@ -446,15 +441,7 @@
       return (str || "").toLowerCase().replace(/\s+/g, '');
     }
 
-    function stopAllTimers() {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-      document.getElementById('game-timer').innerText = "--";
-    }
-
-    // 關於我們彈窗
+    // 關於我們彈窗處理
     aboutBtn.addEventListener('click', () => {
       document.getElementById('about-page-1').classList.remove('hidden');
       document.getElementById('about-page-2').classList.add('hidden');
@@ -470,9 +457,8 @@
       aboutModal.classList.add('hidden');
     });
 
-    // 返回首頁
+    // 返回首頁邏輯
     function backToMainMenu() {
-      stopAllTimers();
       if (roomListenerRef) { off(roomListenerRef); roomListenerRef = null; }
       if (chatListenerRef) { off(chatListenerRef); chatListenerRef = null; }
       currentActiveRoomCode = "";
@@ -533,12 +519,13 @@
       update(ref(db, `rooms/${currentActiveRoomCode}`), { guessTime: parseInt(e.target.value) });
     });
 
-    // 頁面切換事件
+    // 頁面切換點擊事件
     startBtn.addEventListener('click', () => {
       mainScreen.classList.add('hidden');
       roomScreen.classList.remove('hidden');
     });
 
+    // 創建房間
     createRoomBtn.addEventListener('click', async () => {
       const nameInput = document.getElementById('username').value.trim();
       if (!nameInput) return alert("請輸入名字！");
@@ -560,15 +547,19 @@
         }
       };
 
-      await set(ref(db, `rooms/${newCode}`), initialRoomData);
-      
-      // 設定離線自動刪除玩家
-      const playerRef = ref(db, `rooms/${newCode}/players/${myPlayerName}`);
-      onDisconnect(playerRef).remove();
+      try {
+        await set(ref(db, `rooms/${newCode}`), initialRoomData);
+        
+        const playerRef = ref(db, `rooms/${newCode}/players/${myPlayerName}`);
+        onDisconnect(playerRef).remove();
 
-      enterRoomView();
+        enterRoomView();
+      } catch (err) {
+        alert("創建房間失敗，請檢查網路：" + err.message);
+      }
     });
 
+    // 前往加入房間代碼頁面
     joinRoomBtn.addEventListener('click', () => {
       const nameInput = document.getElementById('username').value.trim();
       if (!nameInput) return alert("請輸入名字！");
@@ -578,6 +569,7 @@
       joinCodeScreen.classList.remove('hidden');
     });
 
+    // 提交代碼加入房間
     submitCodeBtn.addEventListener('click', async () => {
       const code = document.getElementById('room-code-input').value.trim().toUpperCase();
       const errorMsg = document.getElementById('join-error-msg');
@@ -588,30 +580,34 @@
         return;
       }
 
-      const roomSnap = await get(ref(db, `rooms/${code}`));
-      if (!roomSnap.exists()) {
-        errorMsg.innerText = "房間不存在！";
-        return;
+      try {
+        const roomSnap = await get(ref(db, `rooms/${code}`));
+        if (!roomSnap.exists()) {
+          errorMsg.innerText = "房間不存在！";
+          return;
+        }
+
+        const roomData = roomSnap.val();
+        const currentCount = roomData.players ? Object.keys(roomData.players).length : 0;
+
+        if (currentCount >= roomData.maxPlayers) {
+          errorMsg.innerText = "房間已滿！";
+          return;
+        }
+
+        currentActiveRoomCode = code;
+        isHost = false;
+
+        await update(ref(db, `rooms/${code}/players/${myPlayerName}`), { ready: false, score: 0 });
+        
+        const playerRef = ref(db, `rooms/${code}/players/${myPlayerName}`);
+        onDisconnect(playerRef).remove();
+
+        joinCodeScreen.classList.add('hidden');
+        enterRoomView();
+      } catch (err) {
+        errorMsg.innerText = "連線失敗：" + err.message;
       }
-
-      const roomData = roomSnap.val();
-      const currentCount = roomData.players ? Object.keys(roomData.players).length : 0;
-
-      if (currentCount >= roomData.maxPlayers) {
-        errorMsg.innerText = "房間已滿！";
-        return;
-      }
-
-      currentActiveRoomCode = code;
-      isHost = false;
-
-      await update(ref(db, `rooms/${code}/players/${myPlayerName}`), { ready: false, score: 0 });
-      
-      const playerRef = ref(db, `rooms/${code}/players/${myPlayerName}`);
-      onDisconnect(playerRef).remove();
-
-      joinCodeScreen.classList.add('hidden');
-      enterRoomView();
     });
 
     // 切換隱藏/顯示房間密碼
@@ -633,7 +629,6 @@
 
       toggleSettingsPermission();
 
-      // 房長與普通玩家按鈕名稱切換
       if (isHost) {
         mainActionBtn.innerText = "開始遊戲";
         mainActionBtn.classList.remove('ready-active');
@@ -646,7 +641,7 @@
       listenChatMessages("room");
     }
 
-    // 監聽房間實時資料
+    // 監聽房間動態資料
     function listenRoomData() {
       if (roomListenerRef) off(roomListenerRef);
       const roomRef = ref(db, `rooms/${currentActiveRoomCode}`);
@@ -661,11 +656,9 @@
         const data = snapshot.val();
         activePlayers = data.players ? Object.keys(data.players) : [];
         
-        // 更新人數顯示
         document.getElementById('current-players').innerText = activePlayers.length;
         document.getElementById('max-players').innerText = data.maxPlayers || 16;
 
-        // 更新控制面板設定 slider
         if (!isHost) {
           playerLimitRange.value = data.maxPlayers || 16;
           document.getElementById('player-limit-val').innerText = data.maxPlayers || 16;
@@ -680,10 +673,8 @@
           document.getElementById('guess-time-val').innerText = (data.guessTime || 60) + "秒";
         }
 
-        // 渲染玩家卡片
         renderPlayersList(data.players, data.host);
 
-        // 如果狀態轉為 intro (準備開始)
         if (data.status === "intro") {
           showIntroModal(data);
         } else if (data.status === "playing") {
@@ -727,7 +718,6 @@
         container.appendChild(card);
       });
 
-      // 綁定踢人事件
       container.querySelectorAll('.kick-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const targetName = e.target.getAttribute('data-name');
@@ -741,23 +731,16 @@
     // 主按鈕（開始遊戲 / 準備）
     mainActionBtn.addEventListener('click', async () => {
       if (isHost) {
-        // 房長點擊開始
         if (activePlayers.length < 2) {
           alert("人數不足，至少需要 2 位玩家才可以開始！");
           return;
         }
-
-        // 檢查是否所有人皆已準備
-        const roomSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
-        const players = roomSnap.val().players;
-        const allReady = Object.keys(players).every(p => p === isHost || players[p].ready);
 
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
           status: "intro",
           readyCount: 0
         });
       } else {
-        // 普通玩家切換準備狀態
         const playerSnap = await get(ref(db, `rooms/${currentActiveRoomCode}/players/${myPlayerName}`));
         const currentReady = playerSnap.val() ? playerSnap.val().ready : false;
 
@@ -785,7 +768,6 @@
       }
     });
 
-    // 玩法介紹 Modal
     function showIntroModal(data) {
       introModal.classList.remove('hidden');
       document.getElementById('ready-count').innerText = data.readyCount || 0;
@@ -798,7 +780,6 @@
       const newCount = (roomSnap.val().readyCount || 0) + 1;
 
       if (newCount >= activePlayers.length) {
-        // 全部玩家確認，正式開始對局
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
           status: "playing",
           currentMakerIndex: 0,
@@ -814,11 +795,9 @@
       }
     });
 
-    // 渲染遊戲對局畫面
     function renderGameView(data) {
       document.getElementById('current-maker-title').innerText = `👑 目前出題者：${data.maker}`;
 
-      // 渲染即時排行榜
       const rankBoard = document.getElementById('game-rank-board');
       rankBoard.innerHTML = "";
       if (data.players) {
@@ -857,7 +836,6 @@
       }
     }
 
-    // 聊天室功能 (發送訊息)
     async function sendChatMessage(type) {
       const inputId = type === "room" ? "room-chat-input" : "game-chat-input";
       const input = document.getElementById(inputId);
@@ -886,7 +864,6 @@
       if (e.key === 'Enter') sendChatMessage('game');
     });
 
-    // 監聽聊天訊息
     function listenChatMessages(type) {
       if (!currentActiveRoomCode) return;
       const chatRef = ref(db, `rooms/${currentActiveRoomCode}/chats`);
@@ -910,7 +887,6 @@
       });
     }
 
-    // 出題者送出題目
     submitQuestionBtn.addEventListener('click', async () => {
       const ans = document.getElementById('maker-ans-input').value.trim();
       const lyrics = document.getElementById('maker-lyrics-input').value.trim();
@@ -930,7 +906,6 @@
       document.getElementById('maker-lyrics-input').value = "";
     });
 
-    // 搶答
     async function submitGuess() {
       const guessInput = document.getElementById('guess-input');
       const val = cleanString(guessInput.value.trim());
@@ -940,7 +915,6 @@
       const roomData = roomSnap.val();
 
       if (val === roomData.answer) {
-        // 答對，加分
         const currentScore = (roomData.players[myPlayerName].score || 0) + 1;
         
         await update(ref(db, `rooms/${currentActiveRoomCode}/players/${myPlayerName}`), {
@@ -949,11 +923,9 @@
 
         alert(`🎉 恭喜 ${myPlayerName} 答對了！答案是：${roomData.answer}`);
 
-        // 判斷是否達到獲勝分數
         if (currentScore >= roomData.winScore) {
           await update(ref(db, `rooms/${currentActiveRoomCode}`), { status: "result" });
         } else {
-          // 輪到下一位出題者
           let nextIndex = (roomData.currentMakerIndex + 1) % activePlayers.length;
           await update(ref(db, `rooms/${currentActiveRoomCode}`), {
             currentMakerIndex: nextIndex,
@@ -975,7 +947,6 @@
       if (e.key === 'Enter') submitGuess();
     });
 
-    // 顯示結算
     function showResultModal(data) {
       resultModal.classList.remove('hidden');
       const leaderboard = document.getElementById('leaderboard-list');
@@ -1004,7 +975,6 @@
       roomView.classList.remove('hidden');
 
       if (isHost) {
-        // 重置玩家分數與狀態
         const updates = {};
         activePlayers.forEach(p => {
           updates[`players/${p}/score`] = 0;
