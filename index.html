@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 設定即時同步優化版</title>
+  <title>猜歌小遊戲 - 完全修正版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: #121212; color: #ffffff; font-family: Arial, sans-serif;
       display: flex; justify-content: center; align-items: center; min-height: 100vh;
+      padding: 10px;
     }
     .screen {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -48,7 +49,7 @@
 
     .players-container {
       display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
-      padding: 10px; background-color: rgba(255, 255, 255, 0.05); border-radius: 8px; max-height: 250px; overflow-y: auto;
+      padding: 10px; background-color: rgba(255, 255, 255, 0.05); border-radius: 8px; max-height: 200px; overflow-y: auto;
     }
     .player-card {
       position: relative; background-color: rgba(255, 255, 255, 0.1); border: 1px dashed rgba(255, 255, 255, 0.3);
@@ -63,36 +64,48 @@
     .setting-title { font-weight: bold; min-width: 100px; }
     .range-group { display: flex; align-items: center; gap: 10px; flex: 1; }
     .range-group input[type="range"] { flex: 1; }
+    
+    /* 修正2：徹底封鎖手機非房主的觸控與修改權限 */
+    .range-group input[type="range"]:disabled {
+      pointer-events: none !important;
+      touch-action: none !important;
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
 
-    /* 遊戲內看板 */
+    /* 修正1：遊戲面板與聊天室 Flex 排版重構，確保聊天室必定顯示 */
     #game-view {
-      width: 100%; max-width: 800px; min-height: 85vh; display: flex; flex-direction: column;
-      gap: 15px; padding: 20px; background: #1e1e1e; border-radius: 12px;
+      width: 100%; max-width: 800px; height: 95vh; display: flex; flex-direction: column;
+      gap: 10px; padding: 15px; background: #1e1e1e; border-radius: 12px;
+      overflow: hidden; justify-content: space-between;
+    }
+    .game-main-area {
+      flex: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-height: 0;
     }
     .game-scoreboard {
-      width: 100%; background: #2a2a2a; border: 2px solid #1db954; border-radius: 8px; padding: 12px;
-      display: flex; flex-direction: column; gap: 8px;
+      width: 100%; background: #2a2a2a; border: 2px solid #1db954; border-radius: 8px; padding: 10px;
+      display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
     }
     .maker-info { font-size: 16px; color: #ffd700; font-weight: bold; text-align: center; }
-    .rank-board { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+    .rank-board { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
     .rank-item {
-      background: #121212; border-radius: 6px; padding: 6px 12px; min-width: 100px; text-align: center;
+      background: #121212; border-radius: 6px; padding: 6px 10px; min-width: 90px; text-align: center;
       border: 1px solid #444; flex-shrink: 0;
     }
     .rank-item.is-maker { border-color: #ffd700; }
 
-    .timer-display { font-size: 32px; font-weight: bold; color: #ff4d4d; text-align: center; }
+    .timer-display { font-size: 28px; font-weight: bold; color: #ff4d4d; text-align: center; margin: 2px 0; flex-shrink: 0; }
     .lyrics-box {
-      width: 100%; min-height: 100px; background: #121212; border: 1px solid #444; border-radius: 8px;
-      padding: 15px; font-size: 18px; text-align: center; display: flex; align-items: center; justify-content: center;
+      width: 100%; min-height: 70px; background: #121212; border: 1px solid #444; border-radius: 8px;
+      padding: 12px; font-size: 16px; text-align: center; display: flex; align-items: center; justify-content: center;
     }
 
-    /* 聊天室樣式 */
+    /* 修正1：聊天室顯示區域獨立固化 */
     .chat-box-container {
       width: 100%; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 10px;
-      display: flex; flex-direction: column; gap: 8px; height: 160px;
+      display: flex; flex-direction: column; gap: 6px; height: 160px; flex-shrink: 0; margin-top: auto;
     }
-    .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+    .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
     .chat-msg { word-break: break-all; }
     .chat-msg .author { font-weight: bold; color: #1db954; }
     .chat-msg.system { color: #ff9800; font-style: italic; }
@@ -110,13 +123,11 @@
 </head>
 <body>
 
-  <!-- 1. 主選單 -->
   <div id="main-screen" class="screen">
     <button id="start-btn">開始</button>
     <button id="about-btn" class="secondary">關於</button>
   </div>
 
-  <!-- 2. 進入房間選單 -->
   <div id="room-screen" class="screen hidden">
     <div class="input-group">
       <label>請輸入名字：</label>
@@ -126,7 +137,6 @@
     <button id="join-room-btn" class="secondary">加入房間</button>
   </div>
 
-  <!-- 3. 輸入代碼頁 -->
   <div id="join-code-screen" class="screen hidden">
     <div class="input-group">
       <label>房間代碼：</label>
@@ -137,7 +147,6 @@
     <button id="back-to-room-screen-btn" class="secondary">返回</button>
   </div>
 
-  <!-- 4. 房間大廳 -->
   <div id="room-view" class="hidden">
     <div class="top-bar">
       <button class="back-btn" id="leave-room-btn">↩</button>
@@ -157,7 +166,6 @@
             <button style="flex:1;" class="active">歌詞猜謎</button>
           </div>
 
-          <!-- 房主可滑動，非房主會同步數值變更 -->
           <div class="setting-row">
             <span class="setting-title">人數上限：</span>
             <div class="range-group">
@@ -201,7 +209,6 @@
     </div>
   </div>
 
-  <!-- 5. 玩法介紹 Modal -->
   <div id="intro-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <h2>歌詞猜謎 - 玩法介紹</h2>
@@ -214,34 +221,33 @@
     </div>
   </div>
 
-  <!-- 6. 遊戲進行主畫面 -->
   <div id="game-view" class="hidden">
-    <div class="game-scoreboard">
-      <div class="maker-info" id="current-maker-title">👑 目前出題者：--</div>
-      <div class="rank-board" id="game-rank-board"></div>
-    </div>
+    <div class="game-main-area">
+      <div class="game-scoreboard">
+        <div class="maker-info" id="current-maker-title">👑 目前出題者：--</div>
+        <div class="rank-board" id="game-rank-board"></div>
+      </div>
 
-    <div class="timer-display" id="game-timer">--</div>
+      <div class="timer-display" id="game-timer">--</div>
 
-    <!-- 出題者介面 -->
-    <div id="maker-panel" class="hidden" style="width:100%; display:flex; flex-direction:column; gap:10px;">
-      <h3>👑 請輸入題目資訊：</h3>
-      <input type="text" id="maker-ans-input" placeholder="請輸入正確歌名（答案）">
-      <textarea id="maker-lyrics-input" rows="3" placeholder="請輸入歌詞題目"></textarea>
-      <button id="submit-question-btn">送出題目</button>
-    </div>
+      <div id="maker-panel" class="hidden" style="width:100%; display:flex; flex-direction:column; gap:10px;">
+        <h3>👑 請輸入題目資訊：</h3>
+        <input type="text" id="maker-ans-input" placeholder="請輸入正確歌名（答案）">
+        <textarea id="maker-lyrics-input" rows="3" placeholder="請輸入歌詞題目"></textarea>
+        <button id="submit-question-btn">送出題目</button>
+      </div>
 
-    <!-- 猜題者介面 -->
-    <div id="guesser-panel" class="hidden" style="width:100%; display:flex; flex-direction:column; gap:10px; align-items:center;">
-      <div id="guesser-status" style="font-size:16px; color:#ffd700;">等待出題者出題...</div>
-      <div class="lyrics-box" id="display-lyrics">歌詞將顯示於此</div>
-      <div style="width:100%; display:flex; gap:8px;">
-        <input type="text" id="guess-input" placeholder="請輸入答案按 Enter 搶答..." disabled>
-        <button id="submit-guess-btn" style="width:100px;" disabled>搶答</button>
+      <div id="guesser-panel" class="hidden" style="width:100%; display:flex; flex-direction:column; gap:10px; align-items:center;">
+        <div id="guesser-status" style="font-size:15px; color:#ffd700;">等待出題者出題...</div>
+        <div class="lyrics-box" id="display-lyrics">歌詞將顯示於此</div>
+        <div style="width:100%; display:flex; gap:8px;">
+          <input type="text" id="guess-input" placeholder="請輸入答案按 Enter 搶答..." disabled>
+          <button id="submit-guess-btn" style="width:90px; font-size:16px;" disabled>搶答</button>
+        </div>
       </div>
     </div>
 
-    <!-- 聊天室 -->
+    <!-- 聊天室區塊 -->
     <div class="chat-box-container">
       <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input-row">
@@ -251,7 +257,6 @@
     </div>
   </div>
 
-  <!-- 7. 單局結算 Modal -->
   <div id="result-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <h2>🎉 遊戲結束 - 最終結算</h2>
@@ -262,7 +267,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, child, update, onValue, off, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, child, update, onValue, off, push, runTransaction, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCQU8dwFwXaogwRdDsnNHHyYKbxxxTifJY",
@@ -282,7 +287,7 @@
 
     let currentActiveRoomCode = "";
     let isCodeVisible = false;
-    let isHost = true;
+    let isHost = false;
     let myPlayerName = "";
     let activePlayers = [];
     let roomListenerRef = null;
@@ -338,29 +343,45 @@
       return (str || "").toLowerCase().replace(/\s+/g, '');
     }
 
+    // 修正2：嚴格管控設定修改權限
     function toggleSettingsPermission() {
-      playerLimitRange.disabled = !isHost;
-      winScoreRange.disabled = !isHost;
-      makerTimeRange.disabled = !isHost;
-      guessTimeRange.disabled = !isHost;
+      const inputs = [playerLimitRange, winScoreRange, makerTimeRange, guessTimeRange];
+      inputs.forEach(input => {
+        input.disabled = !isHost;
+      });
     }
 
-    // 房主主動拖曳拉條時更新 Firebase 資料
-    playerLimitRange.addEventListener('input', (e) => {
+    [playerLimitRange, winScoreRange, makerTimeRange, guessTimeRange].forEach(input => {
+      input.addEventListener('input', (e) => {
+        if (!isHost) {
+          e.preventDefault();
+          return false;
+        }
+      });
+    });
+
+    playerLimitRange.addEventListener('change', (e) => {
+      if (!isHost) return;
       document.getElementById('player-limit-val').innerText = e.target.value;
-      if (isHost && currentActiveRoomCode) update(ref(db, `rooms/${currentActiveRoomCode}`), { maxPlayers: parseInt(e.target.value) });
+      if (currentActiveRoomCode) update(ref(db, `rooms/${currentActiveRoomCode}`), { maxPlayers: parseInt(e.target.value) });
     });
-    winScoreRange.addEventListener('input', (e) => {
+
+    winScoreRange.addEventListener('change', (e) => {
+      if (!isHost) return;
       document.getElementById('win-score-val').innerText = e.target.value + "分";
-      if (isHost && currentActiveRoomCode) update(ref(db, `rooms/${currentActiveRoomCode}`), { winScore: parseInt(e.target.value) });
+      if (currentActiveRoomCode) update(ref(db, `rooms/${currentActiveRoomCode}`), { winScore: parseInt(e.target.value) });
     });
-    makerTimeRange.addEventListener('input', (e) => {
+
+    makerTimeRange.addEventListener('change', (e) => {
+      if (!isHost) return;
       document.getElementById('maker-time-val').innerText = e.target.value + "秒";
-      if (isHost && currentActiveRoomCode) update(ref(db, `rooms/${currentActiveRoomCode}`), { makerTime: parseInt(e.target.value) });
+      if (currentActiveRoomCode) update(ref(db, `rooms/${currentActiveRoomCode}`), { makerTime: parseInt(e.target.value) });
     });
-    guessTimeRange.addEventListener('input', (e) => {
+
+    guessTimeRange.addEventListener('change', (e) => {
+      if (!isHost) return;
       document.getElementById('guess-time-val').innerText = e.target.value + "秒";
-      if (isHost && currentActiveRoomCode) update(ref(db, `rooms/${currentActiveRoomCode}`), { guessTime: parseInt(e.target.value) });
+      if (currentActiveRoomCode) update(ref(db, `rooms/${currentActiveRoomCode}`), { guessTime: parseInt(e.target.value) });
     });
 
     function showRoomSelectionScreen() {
@@ -399,9 +420,33 @@
       }
     }
 
+    // 修正4：監聽連線狀態，重新整理或離線時自動刪除玩家，解決殘影與退房問題
+    function setupOnDisconnect(roomCode) {
+      const myRef = ref(db, `rooms/${roomCode}`);
+      onValue(ref(db, ".info/connected"), async (snap) => {
+        if (snap.val() === true && roomCode && myPlayerName) {
+          const roomSnap = await get(myRef);
+          if (roomSnap.exists()) {
+            let pList = roomSnap.val().players || [];
+            pList = pList.filter(p => p.name !== myPlayerName);
+            
+            // 設定斷線自動處理邏輯
+            if (pList.length === 0) {
+              onDisconnect(myRef).remove();
+            } else {
+              if (isHost && pList.length > 0) pList[0].isHost = true;
+              onDisconnect(myRef).update({ players: pList });
+            }
+          }
+        }
+      });
+    }
+
     function listenToRoom(roomCode) {
       if (roomListenerRef) off(roomListenerRef);
       roomListenerRef = ref(db, `rooms/${roomCode}`);
+
+      setupOnDisconnect(roomCode);
 
       onValue(roomListenerRef, (snapshot) => {
         if (isSelfLeaving) return;
@@ -415,10 +460,10 @@
             showRoomSelectionScreen();
             return;
           }
-          isHost = self.isHost || false;
+
+          isHost = !!self.isHost;
           toggleSettingsPermission();
 
-          // 優化：房主調整時，所有非房主玩家的 DOM 畫面與數字進行即時同步
           if (!isHost) {
             playerLimitRange.value = roomData.maxPlayers || 16;
             document.getElementById('player-limit-val').innerText = playerLimitRange.value;
@@ -675,13 +720,14 @@
         item.className = `rank-item ${isMaker ? 'is-maker' : ''}`;
         item.innerHTML = `
           <div style="font-size:12px; color:#888;">第 ${index + 1} 名</div>
-          <div style="font-weight:bold; font-size:14px;">${p.name} ${isMaker ? '👑' : ''}</div>
-          <div style="color:#1db954; font-size:14px;">${p.score || 0} 分</div>
+          <div style="font-weight:bold; font-size:13px;">${p.name} ${isMaker ? '👑' : ''}</div>
+          <div style="color:#1db954; font-size:13px;">${p.score || 0} 分</div>
         `;
         rankBoard.appendChild(item);
       });
     }
 
+    // 修正3：遊戲狀態處理器，徹底分離遊戲結束與續局階段
     function handleGameState(roomData) {
       const state = roomData.gameState;
 
@@ -690,6 +736,7 @@
         gameView.classList.add('hidden');
         introModal.classList.add('hidden');
         resultModal.classList.add('hidden');
+        clearInterval(timerInterval);
       } 
       else if (state === 'INTRO') {
         roomView.classList.add('hidden');
@@ -717,7 +764,9 @@
         const isMaker = currentMaker && currentMaker.name === myPlayerName;
 
         startTimer(roomData.endTime, () => {
-          if (isHost) nextRound(roomData, "出題超時！自動進入下一輪");
+          if (isHost && roomData.gameState === 'MAKING_QUESTION') {
+            nextRound(roomData, "出題超時！自動進入下一輪");
+          }
         });
 
         if (isMaker) {
@@ -739,7 +788,7 @@
         document.getElementById('guesser-status').innerText = "題目已出好！準備倒數搶答！";
         document.getElementById('display-lyrics').innerText = "3 秒後公開歌詞...";
         startTimer(roomData.endTime, () => {
-          if (isHost) {
+          if (isHost && roomData.gameState === 'COUNTDOWN') {
             update(ref(db, `rooms/${currentActiveRoomCode}`), {
               gameState: 'GUESSING',
               endTime: Date.now() + (roomData.guessTime * 1000)
@@ -765,10 +814,17 @@
         }
 
         startTimer(roomData.endTime, () => {
-          if (isHost) nextRound(roomData, "時間到！無人答對，公布答案：" + roomData.currentAnswer);
+          if (isHost && roomData.gameState === 'GUESSING') {
+            nextRound(roomData, "時間到！無人答對，公布答案：" + roomData.currentAnswer);
+          }
         });
       }
       else if (state === 'ENDED') {
+        // 修正3：遊戲結束時徹底終止所有計時並切換結算彈窗
+        clearInterval(timerInterval);
+        document.getElementById('game-timer').innerText = "--";
+        document.getElementById('maker-panel').classList.add('hidden');
+        document.getElementById('guesser-panel').classList.add('hidden');
         gameView.classList.add('hidden');
         resultModal.classList.remove('hidden');
         renderLeaderboard(roomData.players);
@@ -809,11 +865,12 @@
 
       if (cleanString(guess) === cleanString(roomData.currentAnswer)) {
         document.getElementById('guess-input').value = "";
+        
         await runTransaction(ref(db, `rooms/${currentActiveRoomCode}`), (room) => {
           if (room && room.gameState === 'GUESSING') {
             room.gameState = 'ROUND_OVER';
             const winner = room.players.find(p => p.name === myPlayerName);
-            if (winner) winner.score += 1;
+            if (winner) winner.score = (winner.score || 0) + 1;
           }
           return room;
         });
@@ -831,16 +888,21 @@
       if (e.key === 'Enter') checkGuess();
     });
 
+    // 修正3：判斷勝負邏輯與防強拉回機制
     async function nextRound(roomData, announceMsg) {
+      if (!isHost) return;
+
+      clearInterval(timerInterval);
       alert(announceMsg);
 
       const winScore = roomData.winScore || 5;
-      const winner = roomData.players.find(p => p.score >= winScore);
+      const winner = roomData.players.find(p => (p.score || 0) >= winScore);
 
       if (winner) {
         const winBoard = roomData.winBoard || {};
         winBoard[winner.name] = (winBoard[winner.name] || 0) + 1;
 
+        // 當已有玩家達標，立刻寫入 ENDED 狀態，阻斷續局
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
           gameState: 'ENDED',
           winBoard: winBoard
@@ -884,6 +946,7 @@
 
     backToRoomBtn.addEventListener('click', async () => {
       confirmIntroBtn.disabled = false;
+      resultModal.classList.add('hidden');
       if (isHost) {
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
           gameState: 'LOBBY'
