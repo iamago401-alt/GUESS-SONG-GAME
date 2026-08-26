@@ -69,7 +69,6 @@
     button.secondary { background-color: #333; }
     button.secondary:hover { background-color: #444; }
 
-    /* 錯誤訊息提示 */
     .error-msg {
       color: #ff4d4d;
       font-size: 14px;
@@ -92,7 +91,6 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
 
-    /* 1. 頂層板塊 */
     .top-bar {
       display: flex;
       justify-content: space-between;
@@ -131,7 +129,6 @@
       background-color: #444;
     }
 
-    /* 2. 中間板塊 (玩家區域) */
     .players-container {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -159,7 +156,6 @@
       border: 1px solid #1db954;
     }
 
-    /* 藍色小勾勾 (右上角) */
     .ready-check {
       position: absolute;
       top: 4px;
@@ -169,7 +165,6 @@
       font-weight: bold;
     }
 
-    /* 踢人紅色叉叉按鈕 */
     .kick-btn {
       background: none;
       border: none;
@@ -185,7 +180,6 @@
       transform: scale(1.3);
     }
 
-    /* 3. 下層板塊 (設定區域) */
     .settings-container {
       padding: 20px;
       border-radius: 8px;
@@ -203,7 +197,6 @@
       color: #111111;
     }
 
-    /* 下層透明動作板塊 */
     .action-panel {
       background-color: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -270,7 +263,7 @@
     <button id="about-btn" class="secondary">關於</button>
   </div>
 
-  <!-- 第二頁：進入房間選單（創建/加入房間） -->
+  <!-- 第二頁：進入房間選單 -->
   <div id="room-screen" class="screen hidden">
     <div class="input-group">
       <label for="username">請輸入名字：</label>
@@ -294,9 +287,7 @@
   <!-- 第四頁：房間視窗 -->
   <div id="room-view" class="hidden">
     
-    <!-- 上層板塊 -->
     <div class="top-bar">
-      <!-- 直接綁定 onclick 事件，確保退房功能 100% 觸發 -->
       <button class="back-btn" id="leave-room-btn" onclick="leaveRoom()" title="返回">↩</button>
       <div class="player-count-display">
         👥 <span id="current-players">1</span>/<span id="max-players">16</span>
@@ -307,18 +298,14 @@
       </div>
     </div>
 
-    <!-- 中間板塊 (玩家展示區) -->
     <div class="players-container" id="players-list"></div>
 
-    <!-- 下層板塊 (設定區) -->
     <div class="settings-container dark" id="settings-panel">
       
-      <!-- 下層透明板塊：房主開始 / 玩家準備區 -->
       <div class="action-panel">
         <button id="main-action-btn" class="action-btn">開始遊戲</button>
       </div>
 
-      <!-- 模式選擇 -->
       <div class="setting-row">
         <span class="setting-title">模式：</span>
         <div class="mode-btn-group">
@@ -328,7 +315,6 @@
         </div>
       </div>
 
-      <!-- 人數拉條 -->
       <div class="setting-row">
         <span class="setting-title">人數：</span>
         <div class="range-group">
@@ -338,7 +324,6 @@
         </div>
       </div>
 
-      <!-- 獲勝條件拉條 -->
       <div class="setting-row">
         <span class="setting-title">獲勝條件：</span>
         <div class="range-group">
@@ -348,13 +333,11 @@
         </div>
       </div>
 
-      <!-- 房間背景調色盤 -->
       <div class="setting-row">
         <span class="setting-title">房間背景：</span>
         <input type="color" id="bg-color-picker" value="#121212">
       </div>
 
-      <!-- 設定板塊底色切換 -->
       <div class="setting-row">
         <span class="setting-title">設定背景：</span>
         <button class="theme-btn secondary" id="theme-light-btn">白天</button>
@@ -365,12 +348,10 @@
 
   </div>
 
-  <!-- Firebase 即時連線模組 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, child, update, onValue, off } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Firebase 配置設定
     const firebaseConfig = {
       apiKey: "AIzaSyCQU8dwFwXaogwRdDsnNHHyYKbxxxTifJY",
       authDomain: "gurss-song.firebaseapp.com",
@@ -382,11 +363,9 @@
       measurementId: "G-7D2V0WBDKS"
     };
 
-    // 初始化 Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 全域變數
     let currentActiveRoomCode = "";
     let isCodeVisible = false;
     let isHost = true;
@@ -394,7 +373,6 @@
     let activePlayers = [];
     let roomListenerRef = null;
 
-    // DOM 元素引用
     const mainScreen = document.getElementById('main-screen');
     const roomScreen = document.getElementById('room-screen');
     const joinCodeScreen = document.getElementById('join-code-screen');
@@ -425,7 +403,6 @@
     const themeDarkBtn = document.getElementById('theme-dark-btn');
     const mainActionBtn = document.getElementById('main-action-btn');
 
-    // 隨機產生 6 位英文代碼
     function generateRoomCode() {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       let code = "";
@@ -435,7 +412,7 @@
       return code;
     }
 
-    // 重置並強制切換回「創建/加入房間」選單頁面
+    // 強制切換回選單頁面，並且確保房間畫面絕對會隱藏
     function showRoomSelectionScreen() {
       if (roomListenerRef) {
         off(roomListenerRef);
@@ -443,20 +420,24 @@
       }
       currentActiveRoomCode = "";
 
-      // 隱藏其他所有畫面，顯示創建/加入房間選單
       mainScreen.classList.add('hidden');
       joinCodeScreen.classList.add('hidden');
+      
+      // 關鍵：明確強制關閉房間視窗
       roomView.classList.add('hidden');
+      roomView.style.display = "none";
+
       roomScreen.classList.remove('hidden');
     }
 
-    // 離開房間函式（綁定全域，讓 HTML 隨時可呼叫）
+    // 離開房間
     window.leaveRoom = async function() {
       const targetRoomCode = currentActiveRoomCode;
       
-      // 先強制切換畫面，提升反應速度
+      // 1. 立即切換畫面，使用者體驗最順暢
       showRoomSelectionScreen();
 
+      // 2. 背景處理雲端資料庫
       if (targetRoomCode) {
         activePlayers = activePlayers.filter(p => p.name !== myPlayerName);
 
@@ -471,7 +452,6 @@
       }
     };
 
-    // 即時監聽雲端房間變化
     function listenToRoom(roomCode) {
       if (roomListenerRef) {
         off(roomListenerRef);
@@ -483,7 +463,6 @@
           const roomData = snapshot.val();
           activePlayers = roomData.players || [];
 
-          // 判斷是否還在房間裡面，不在（被踢出）則立刻導回選單
           const stillInRoom = activePlayers.some(p => p.name === myPlayerName);
           if (!stillInRoom) {
             showRoomSelectionScreen();
@@ -499,12 +478,12 @@
           renderPlayers();
           updateActionButton();
         } else {
+          // 房間被刪除時，直接順暢回到選單，不跳出卡住視窗的 alert
           showRoomSelectionScreen();
         }
       });
     }
 
-    // 渲染玩家列表
     function renderPlayers() {
       playersList.innerHTML = "";
       const maxCount = parseInt(playerLimitRange.value);
@@ -540,7 +519,6 @@
       }
     }
 
-    // 雲端踢人
     async function kickPlayerOnline(index) {
       activePlayers.splice(index, 1);
       await update(ref(db, 'rooms/' + currentActiveRoomCode), {
@@ -548,7 +526,6 @@
       });
     }
 
-    // 更新動作按鈕狀態
     function updateActionButton() {
       if (isHost) {
         mainActionBtn.innerText = "開始遊戲";
@@ -566,7 +543,6 @@
       }
     }
 
-    // 點擊「開始遊戲 / 準備」
     mainActionBtn.addEventListener('click', async () => {
       if (isHost) {
         alert("遊戲開始！");
@@ -581,7 +557,6 @@
       }
     });
 
-    // 點擊「創建房間」
     createRoomBtn.addEventListener('click', async () => {
       myPlayerName = document.getElementById('username').value.trim() || "玩家1";
       currentActiveRoomCode = generateRoomCode();
@@ -603,6 +578,7 @@
         toggleCodeBtn.innerText = "顯示";
 
         roomScreen.classList.add('hidden');
+        roomView.style.display = "flex";
         roomView.classList.remove('hidden');
       } catch (err) {
         console.error(err);
@@ -610,7 +586,6 @@
       }
     });
 
-    // 點擊「加入房間」按鈕（展開代碼輸入頁）
     joinRoomBtn.addEventListener('click', () => {
       roomCodeInput.value = "";
       joinErrorMsg.innerText = "";
@@ -622,7 +597,6 @@
       e.target.value = e.target.value.replace(/\s+/g, '').toUpperCase();
     });
 
-    // 驗證代碼並進入房間
     submitCodeBtn.addEventListener('click', async () => {
       const inputCode = roomCodeInput.value.trim().replace(/\s+/g, '').toUpperCase();
       myPlayerName = document.getElementById('username').value.trim() || "玩家2";
@@ -664,6 +638,7 @@
             listenToRoom(inputCode);
 
             joinCodeScreen.classList.add('hidden');
+            roomView.style.display = "flex";
             roomView.classList.remove('hidden');
 
             roomCodeText.innerText = "******";
