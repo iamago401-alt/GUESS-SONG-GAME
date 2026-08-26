@@ -435,6 +435,19 @@
       return code;
     }
 
+    // 重置畫面，直接回到「創建 / 加入房間」畫面
+    function resetToRoomScreen() {
+      if (roomListener) off(roomListener);
+      currentActiveRoomCode = "";
+      
+      // 隱藏房間視窗與輸入代碼頁面
+      roomView.classList.add('hidden');
+      joinCodeScreen.classList.add('hidden');
+      
+      // 顯示創建 / 加入房間頁面
+      roomScreen.classList.remove('hidden');
+    }
+
     // 即時監聽雲端房間變化
     function listenToRoom(roomCode) {
       if (roomListener) off(roomListener);
@@ -445,10 +458,9 @@
           const roomData = snapshot.val();
           activePlayers = roomData.players || [];
 
-          // Bug 2 修正：檢查自己是否仍在玩家列表內，若不在（被踢出）則自動回到房間選單
+          // 檢查自己是否還在列表中（不在代表被踢了），無提示直接跳回選單
           const stillInRoom = activePlayers.some(p => p.name === myPlayerName);
           if (!stillInRoom) {
-            alert("你已被房主踢出房間！");
             resetToRoomScreen();
             return;
           }
@@ -462,7 +474,7 @@
           renderPlayers();
           updateActionButton();
         } else {
-          alert("房間已關閉");
+          // 房間被刪除，直接跳回選單
           resetToRoomScreen();
         }
       });
@@ -530,14 +542,6 @@
       }
     }
 
-    // 重置並回到進入房間選單
-    function resetToRoomScreen() {
-      if (roomListener) off(roomListener);
-      currentActiveRoomCode = "";
-      roomView.classList.add('hidden');
-      roomScreen.classList.remove('hidden');
-    }
-
     // 點擊「開始遊戲 / 準備」
     mainActionBtn.addEventListener('click', async () => {
       if (isHost) {
@@ -578,7 +582,7 @@
         roomView.classList.remove('hidden');
       } catch (err) {
         console.error(err);
-        alert("創建房間失敗，請檢查資料庫規則權限！");
+        alert("創建房間失敗，請檢查網路連線！");
       }
     });
 
@@ -653,7 +657,7 @@
       }
     });
 
-    // Bug 1 修正：點擊左上角↩返回按鈕離開房間
+    // 主動點擊左上角 ↩ 返回按鈕
     async function leaveRoom() {
       if (currentActiveRoomCode) {
         activePlayers = activePlayers.filter(p => p.name !== myPlayerName);
@@ -720,7 +724,7 @@
 
     themeDarkBtn.addEventListener('click', () => {
       settingsPanel.classList.remove('light');
-      settingsPanel.classList.dark('dark');
+      settingsPanel.classList.add('dark');
     });
   </script>
 
