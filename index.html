@@ -254,7 +254,7 @@
       font-size: 14px;
     }
 
-    /* 被踢出房間的全覆蓋彈窗 Modal */
+    /* 被踢出房間專用提示彈窗 Modal */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -319,8 +319,8 @@
   <div id="room-view" class="hidden">
     
     <div class="top-bar">
-      <!-- 綁定點擊事件 -->
-      <button class="back-btn" id="leave-room-btn" onclick="window.confirmLeaveRoom()" title="返回">↩</button>
+      <!-- 直接監聽，不掛載 HTML onclick -->
+      <button class="back-btn" id="leave-room-btn" title="返回">↩</button>
       <div class="player-count-display">
         👥 <span id="current-players">1</span>/<span id="max-players">16</span>
       </div>
@@ -412,7 +412,7 @@
     let myPlayerName = "";
     let activePlayers = [];
     let roomListenerRef = null;
-    let isSelfLeaving = false; 
+    let isSelfLeaving = false;
 
     const mainScreen = document.getElementById('main-screen');
     const roomScreen = document.getElementById('room-screen');
@@ -421,6 +421,7 @@
     const kickedModal = document.getElementById('kicked-modal');
     const kickedConfirmBtn = document.getElementById('kicked-confirm-btn');
 
+    const leaveRoomBtn = document.getElementById('leave-room-btn');
     const startBtn = document.getElementById('start-btn');
     const aboutBtn = document.getElementById('about-btn');
     const createRoomBtn = document.getElementById('create-room-btn');
@@ -470,13 +471,13 @@
       roomScreen.classList.remove('hidden');
     }
 
-    // 將 confirmLeaveRoom 掛載到 window 全域，讓 onclick 可以 100% 觸發
-    window.confirmLeaveRoom = function() {
-      const isSure = window.confirm("您確定要離開房間嗎？");
-      if (isSure) {
+    // 事件監聽：點擊返回按鈕跳出二次確認
+    leaveRoomBtn.addEventListener('click', () => {
+      const sure = confirm("您確定要離開房間嗎？");
+      if (sure) {
         leaveRoom();
       }
-    };
+    });
 
     async function leaveRoom() {
       isSelfLeaving = true;
