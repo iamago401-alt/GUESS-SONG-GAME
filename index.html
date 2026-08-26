@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 嚴謹防錯版</title>
+  <title>猜歌小遊戲 - 最終防錯完整版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -401,7 +401,8 @@
         clearInterval(timerInterval);
         timerInterval = null;
       }
-      document.getElementById('game-timer').innerText = "--";
+      const timerEl = document.getElementById('game-timer');
+      if (timerEl) timerEl.innerText = "--";
     }
 
     aboutBtn.addEventListener('click', () => {
@@ -421,8 +422,14 @@
 
     function resetRoomState() {
       stopAllTimers();
-      if (roomRefObj) { try { off(roomRefObj); } catch(e){} roomRefObj = null; }
-      if (chatRefObj) { try { off(chatRefObj); } catch(e){} chatRefObj = null; }
+      if (roomRefObj) { 
+        try { off(roomRefObj); } catch(e){} 
+        roomRefObj = null; 
+      }
+      if (chatRefObj) { 
+        try { off(chatRefObj); } catch(e){} 
+        chatRefObj = null; 
+      }
       currentActiveRoomCode = "";
       
       mainScreen.classList.add('hidden');
@@ -560,6 +567,7 @@
     }
 
     function listenToRoomData(code) {
+      if (!code) return;
       roomRefObj = ref(db, `rooms/${code}`);
       onValue(roomRefObj, (snapshot) => {
         if (isSelfLeaving) return;
@@ -618,6 +626,7 @@
 
     function renderPlayersList(data) {
       const listEl = document.getElementById('players-list');
+      if (!listEl) return;
       listEl.innerHTML = "";
 
       Object.entries(data.players || {}).forEach(([pName, pInfo]) => {
@@ -641,7 +650,9 @@
         btn.addEventListener('click', (e) => {
           const targetName = e.target.getAttribute('data-name');
           if (confirm(`確定要將 ${targetName} 踢出房間嗎？`)) {
-            remove(ref(db, `rooms/${currentActiveRoomCode}/players/${targetName}`));
+            if (currentActiveRoomCode) {
+              remove(ref(db, `rooms/${currentActiveRoomCode}/players/${targetName}`));
+            }
           }
         });
       });
@@ -649,6 +660,7 @@
 
     function renderWinBoard(data) {
       const winBoardEl = document.getElementById('win-board-list');
+      if (!winBoardEl) return;
       winBoardEl.innerHTML = "";
 
       const sortedByWins = Object.entries(data.players || {})
@@ -776,11 +788,12 @@
       if (data.timerEndTime) {
         const updateTimer = () => {
           const remaining = Math.max(0, Math.ceil((data.timerEndTime - Date.now()) / 1000));
-          document.getElementById('game-timer').innerText = `⏱️ 剩餘時間：${remaining} 秒`;
+          const timerEl = document.getElementById('game-timer');
+          if (timerEl) timerEl.innerText = `⏱️ 剩餘時間：${remaining} 秒`;
 
           if (remaining <= 0) {
             stopAllTimers();
-            if (isHost) {
+            if (isHost && currentActiveRoomCode) {
               handleTimerExpire(data);
             }
           }
@@ -788,12 +801,13 @@
         updateTimer();
         timerInterval = setInterval(updateTimer, 1000);
       } else {
-        document.getElementById('game-timer').innerText = "--";
+        const timerEl = document.getElementById('game-timer');
+        if (timerEl) timerEl.innerText = "--";
       }
     }
 
     async function handleTimerExpire(data) {
-      if (!isHost) return;
+      if (!isHost || !currentActiveRoomCode) return;
       const nextIndex = ((data.currentMakerIndex || 0) + 1) % activePlayers.length;
       const nextMakerTime = Date.now() + ((data.makerTime || 30) * 1000);
       await update(ref(db, `rooms/${currentActiveRoomCode}`), {
@@ -803,14 +817,29 @@
       });
     }
 
+    // 嚴格防呆防錯的玩法確認按鈕
     confirmIntroBtn.addEventListener('click', async () => {
-      if (!currentActiveRoomCode) return;
-      await update(ref(db, `rooms/${currentActiveRoomCode}/players/${myPlayerName}`), {
-        introReady: true
-      });
+      if (!currentActiveRoomCode || !myPlayerName) {
+        alert("連線狀態異常，請重新加入房間！");
+        switchToRoomScreen();
+        return;
+      }
+
+      try {
+        confirmIntroBtn.disabled = true;
+        confirmIntroBtn.innerText = "處理中...";
+
+        await update(ref(db, `rooms/${currentActiveRoomCode}/players/${myPlayerName}`), {
+          introReady: true
+        });
+      } catch (error) {
+        console.error("更新準備狀態失敗:", error);
+        confirmIntroBtn.disabled = false;
+      }
     });
 
     mainActionBtn.addEventListener('click', async () => {
+      if (!currentActiveRoomCode) return;
       if (isHost) {
         if (activePlayers.length < 2) return alert("至少需要 2 位玩家才能開始遊戲！");
 
@@ -827,7 +856,7 @@
         });
 
         const roomDataSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
-        const makerTimeSec = roomDataSnap.val().makerTime || 30;
+        const makerTimeSec = roomDataSnap.val()?.makerTime || 30;
 
         updates['state'] = "intro";
         updates['currentMakerIndex'] = 0;
@@ -845,6 +874,7 @@
     });
 
     submitQuestionBtn.addEventListener('click', async () => {
+      if (!currentActiveRoomCode) return;
       const ans = document.getElementById('maker-ans-input').value.trim();
       const lyrics = document.getElementById('maker-lyrics-input').value.trim();
 
@@ -852,6 +882,7 @@
 
       const snapshot = await get(ref(db, `rooms/${currentActiveRoomCode}`));
       const roomData = snapshot.val();
+      if (!roomData) return;
       const guessTimeSec = roomData.guessTime || 60;
 
       await update(ref(db, `rooms/${currentActiveRoomCode}`), {
@@ -867,7 +898,7 @@
     });
 
     async function processGuess(guessText) {
-      if (!guessText) return;
+      if (!guessText || !currentActiveRoomCode) return;
       const cleanGuess = cleanString(guessText);
 
       const snapshot = await get(ref(db, `rooms/${currentActiveRoomCode}`));
@@ -928,6 +959,7 @@
 
     function renderResult(data) {
       const listEl = document.getElementById('leaderboard-list');
+      if (!listEl) return;
       listEl.innerHTML = "";
 
       const sorted = Object.entries(data.players || {})
@@ -945,6 +977,7 @@
     }
 
     backToRoomBtn.addEventListener('click', async () => {
+      if (!currentActiveRoomCode) return;
       if (isHost) {
         const snapshot = await get(ref(db, `rooms/${currentActiveRoomCode}/players`));
         const players = snapshot.val() || {};
@@ -988,10 +1021,13 @@
     });
 
     function listenToChat(code) {
+      if (!code) return;
       chatRefObj = ref(db, `rooms/${code}/chats`);
       onValue(chatRefObj, (snapshot) => {
         const roomChatMsgs = document.getElementById('room-chat-messages');
         const gameChatMsgs = document.getElementById('game-chat-messages');
+
+        if (!roomChatMsgs || !gameChatMsgs) return;
 
         roomChatMsgs.innerHTML = "";
         gameChatMsgs.innerHTML = "";
@@ -1019,6 +1055,7 @@
     }
 
     async function sendChatMessage(inputEl) {
+      if (!inputEl) return;
       const text = inputEl.value.trim();
       if (!text || !currentActiveRoomCode) return;
 
