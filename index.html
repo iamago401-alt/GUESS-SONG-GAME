@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 完全修復終極版</title>
+  <title>猜歌小遊戲 - 完美修正版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -18,7 +18,7 @@
     }
     .hidden { display: none !important; }
 
-    /* 首頁大標題樣式（白底黑字粗體） */
+    /* 首頁大標題樣式 */
     .game-main-title {
       background-color: #ffffff;
       color: #000000;
@@ -79,17 +79,26 @@
     .ready-tag { color: #00d2ff; font-weight: bold; font-size: 14px; }
     .kick-btn { background: none; border: none; color: #ff4d4d; font-size: 16px; font-weight: bold; cursor: pointer; width: auto; }
 
-    /* 【問題 1 修正】設定區塊強制指定純黑背景與白字白框 */
-    .settings-container {
-      padding: 15px; border-radius: 8px; 
+    /* 【問題 1 精準修復】設定區塊強制黑底白字 */
+    #room-view .settings-container,
+    div.settings-container {
+      padding: 15px !important; 
+      border-radius: 8px !important; 
       background-color: #000000 !important;
       color: #ffffff !important;
       border: 2px solid #ffffff !important;
-      display: flex; flex-direction: column; gap: 12px; 
+      display: flex !important; 
+      flex-direction: column !important; 
+      gap: 12px !important; 
+    }
+    .settings-container *,
+    .settings-container .setting-title,
+    .settings-container .range-group {
+      color: #ffffff !important;
     }
     .setting-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .setting-title { font-weight: bold; min-width: 100px; color: #ffffff !important; }
-    .range-group { display: flex; align-items: center; gap: 10px; flex: 1; color: #ffffff !important; }
+    .setting-title { font-weight: bold; min-width: 100px; }
+    .range-group { display: flex; align-items: center; gap: 10px; flex: 1; }
     .range-group input[type="range"] { flex: 1; }
     .range-group input[type="range"]:disabled { pointer-events: none !important; opacity: 0.4; cursor: not-allowed; }
 
@@ -118,7 +127,7 @@
       padding: 12px; font-size: 16px; text-align: center; display: flex; align-items: center; justify-content: center;
     }
 
-    /* 聊天室通用樣式 (房間與遊戲共用) */
+    /* 聊天室樣式 */
     .chat-box-container {
       width: 100%; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 10px;
       display: flex; flex-direction: column; gap: 6px; height: 180px; flex-shrink: 0;
@@ -187,7 +196,7 @@
         <div class="settings-container">
           <button id="main-action-btn">開始遊戲</button>
 
-          <!-- 調色盤選取背景顏色 -->
+          <!-- 背景選色器 -->
           <div class="setting-row">
             <span class="setting-title">背景顏色：</span>
             <input type="color" id="bg-color-picker" value="#121212" style="width: 50px; height: 35px; border: none; cursor: pointer; background: none;">
@@ -233,7 +242,7 @@
       </div>
 
       <div class="room-right">
-        <!-- 累積勝場榜 -->
+        <!-- 勝場榜 -->
         <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
           <div style="font-size:16px; font-weight:bold; color:#ffd700; margin-bottom:8px; text-align:center;">🏆 累積勝場榜</div>
           <ul class="win-board-list" id="win-board-list" style="list-style:none; display:flex; flex-direction:column; gap:6px;">
@@ -241,7 +250,7 @@
           </ul>
         </div>
 
-        <!-- 房間大廳聊天室 -->
+        <!-- 聊天室 -->
         <div class="chat-box-container" style="flex:1;">
           <div class="chat-messages" id="room-chat-messages"></div>
           <div class="chat-input-row">
@@ -256,7 +265,6 @@
   <!-- 關於我們彈窗 -->
   <div id="about-modal" class="modal-overlay hidden">
     <div class="modal-box">
-      <!-- 第一頁 -->
       <div id="about-page-1">
         <h2 style="color:#1db954; margin-bottom:12px;">關於作者</h2>
         <div style="text-align: left; line-height: 1.6; font-size:15px; background:#121212; padding:15px; border-radius:8px; border:1px solid #333;">
@@ -268,7 +276,6 @@
         <button id="about-next-btn" style="margin-top:15px;">下一頁</button>
       </div>
 
-      <!-- 第二頁 -->
       <div id="about-page-2" class="hidden">
         <h2 style="color:#1db954; margin-bottom:12px;">遊戲說明與規則</h2>
         <div style="text-align: left; line-height: 1.6; font-size:14px; background:#121212; padding:15px; border-radius:8px; border:1px solid #333;">
@@ -326,7 +333,7 @@
       </div>
     </div>
 
-    <!-- 遊戲中聊天室 -->
+    <!-- 遊戲聊天室 -->
     <div class="chat-box-container">
       <div class="chat-messages" id="game-chat-messages"></div>
       <div class="chat-input-row">
@@ -347,7 +354,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, child, update, onValue, off, push, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, update, onValue, off, push, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCQU8dwFwXaogwRdDsnNHHyYKbxxxTifJY",
@@ -375,7 +382,7 @@
     let isSelfLeaving = false;
     let timerInterval = null;
 
-    // DOM 元素引用
+    // DOM 元素
     const mainScreen = document.getElementById('main-screen');
     const roomScreen = document.getElementById('room-screen');
     const joinCodeScreen = document.getElementById('join-code-screen');
@@ -402,7 +409,7 @@
     const makerTimeRange = document.getElementById('maker-time-range');
     const guessTimeRange = document.getElementById('guess-time-range');
     
-    // 監聽事件：改變全域背景顏色
+    // 背景顏色選擇
     const bgColorPicker = document.getElementById('bg-color-picker');
     bgColorPicker.addEventListener('input', (e) => {
       document.body.style.backgroundColor = e.target.value;
@@ -436,7 +443,7 @@
       document.getElementById('game-timer').innerText = "--";
     }
 
-    // 關於我們彈窗邏輯
+    // 關於我們彈窗
     aboutBtn.addEventListener('click', () => {
       document.getElementById('about-page-1').classList.remove('hidden');
       document.getElementById('about-page-2').classList.add('hidden');
@@ -452,13 +459,16 @@
       aboutModal.classList.add('hidden');
     });
 
-    // 清理監聽器與變數的共用函式
+    // 徹底解鎖/清理畫面監聽狀態
     function resetRoomState() {
       stopAllTimers();
       if (roomListenerRef) { off(roomListenerRef); roomListenerRef = null; }
       if (chatListenerRef) { off(chatListenerRef); chatListenerRef = null; }
       currentActiveRoomCode = "";
       
+      mainScreen.classList.add('hidden');
+      roomScreen.classList.add('hidden');
+      joinCodeScreen.classList.add('hidden');
       roomView.classList.add('hidden');
       gameView.classList.add('hidden');
       aboutModal.classList.add('hidden');
@@ -466,19 +476,15 @@
       resultModal.classList.add('hidden');
     }
 
-    // 返回首頁按鈕事件
+    // 回首頁
     function backToMainMenu() {
       resetRoomState();
-      roomScreen.classList.add('hidden');
-      joinCodeScreen.classList.add('hidden');
       mainScreen.classList.remove('hidden');
     }
 
-    // 【問題 2 修正】離開房間時，退回「選擇創建/加入房間頁面」
-    function backToRoomSelectMenu() {
+    // 【問題 2 精準修復】退回「選擇創建/加入房間頁面」
+    function switchToRoomScreen() {
       resetRoomState();
-      joinCodeScreen.classList.add('hidden');
-      mainScreen.classList.add('hidden');
       roomScreen.classList.remove('hidden');
     }
 
@@ -618,7 +624,6 @@
       enterRoom(codeInput);
     });
 
-    // 進入大廳後綁定事件與監聽
     function enterRoom(code) {
       roomScreen.classList.add('hidden');
       joinCodeScreen.classList.add('hidden');
@@ -635,16 +640,19 @@
     function listenToRoomData(code) {
       const roomRef = ref(db, `rooms/${code}`);
       roomListenerRef = onValue(roomRef, (snapshot) => {
+        // 如果是主動按離開，不跳出警示彈窗
+        if (isSelfLeaving) return;
+
         if (!snapshot.exists()) {
-          if (!isSelfLeaving) alert("房間已被銷毀或房主離開！");
-          backToRoomSelectMenu();
+          alert("房間已被銷毀或房主離開！");
+          switchToRoomScreen();
           return;
         }
 
         const data = snapshot.val();
         activePlayers = Object.keys(data.players || {});
 
-        // 自動轉移房主邏輯
+        // 房主轉移
         if (!data.players[data.host] && activePlayers.length > 0) {
           const newHost = activePlayers[0];
           update(ref(db, `rooms/${code}`), { host: newHost });
@@ -850,23 +858,13 @@
     async function handleTimerExpire(data) {
       if (!isHost) return;
 
-      if (!data.question) {
-        const nextIndex = (data.currentMakerIndex + 1) % activePlayers.length;
-        const nextMakerTime = Date.now() + (data.makerTime * 1000);
-        await update(ref(db, `rooms/${currentActiveRoomCode}`), {
-          currentMakerIndex: nextIndex,
-          question: null,
-          timerEndTime: nextMakerTime
-        });
-      } else {
-        const nextIndex = (data.currentMakerIndex + 1) % activePlayers.length;
-        const nextMakerTime = Date.now() + (data.makerTime * 1000);
-        await update(ref(db, `rooms/${currentActiveRoomCode}`), {
-          currentMakerIndex: nextIndex,
-          question: null,
-          timerEndTime: nextMakerTime
-        });
-      }
+      const nextIndex = (data.currentMakerIndex + 1) % activePlayers.length;
+      const nextMakerTime = Date.now() + (data.makerTime * 1000);
+      await update(ref(db, `rooms/${currentActiveRoomCode}`), {
+        currentMakerIndex: nextIndex,
+        question: null,
+        timerEndTime: nextMakerTime
+      });
     }
 
     confirmIntroBtn.addEventListener('click', async () => {
@@ -1031,14 +1029,18 @@
       }
     });
 
-    // 【問題 2 修正】按下退出房間時，點選確認會回到選擇頁面
+    // 【問題 2 精準修復】退房按鈕點擊後，徹底移除玩家並導向建立/加入房間頁面
     leaveRoomBtn.addEventListener('click', async () => {
       if (confirm("確定要離開房間嗎？")) {
         isSelfLeaving = true;
         if (currentActiveRoomCode && myPlayerName) {
-          await remove(ref(db, `rooms/${currentActiveRoomCode}/players/${myPlayerName}`));
+          try {
+            await remove(ref(db, `rooms/${currentActiveRoomCode}/players/${myPlayerName}`));
+          } catch (e) {
+            console.log("移除玩家狀態:", e);
+          }
         }
-        backToRoomSelectMenu();
+        switchToRoomScreen();
         isSelfLeaving = false;
       }
     });
