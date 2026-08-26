@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 最終完美修正版</title>
+  <title>猜歌小遊戲 - 強制離開修復版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -446,7 +446,7 @@
       aboutModal.classList.add('hidden');
     });
 
-    // 徹底清理狀態與監聽器（完全避免 pieceNum_ 錯誤）
+    // 徹底清理狀態與監聽器
     function resetRoomState() {
       stopAllTimers();
       if (roomRefObj) {
@@ -1021,21 +1021,29 @@
       }
     });
 
-    // 離開房間：修正變數競爭問題
-    leaveRoomBtn.addEventListener('click', async () => {
+    // 🏆【超級強固版】離開房間：強制本地切畫面，背景同步清除
+    leaveRoomBtn.addEventListener('click', () => {
       if (confirm("確定要離開房間嗎？")) {
         isSelfLeaving = true;
         const codeToLeave = currentActiveRoomCode;
         const nameToLeave = myPlayerName;
 
-        if (codeToLeave && nameToLeave) {
-          try {
-            await remove(ref(db, `rooms/${codeToLeave}/players/${nameToLeave}`));
-          } catch (e) {
-            console.log("移除玩家狀態時發生異常:", e);
-          }
-        }
+        // 1. **第一優先**：立刻在本地強制解除所有監聽並切換回大廳選擇頁面
         switchToRoomScreen();
+
+        // 2. **第二步**：在背景進行遠端資料庫移除，不阻塞畫面
+        if (codeToLeave && nameToLeave) {
+          remove(ref(db, `rooms/${codeToLeave}/players/${nameToLeave}`))
+            .then(async () => {
+              // 檢查如果房間已經沒有人了，順便把整個房間砍掉以防垃圾資料堆積
+              const snap = await get(ref(db, `rooms/${codeToLeave}/players`));
+              if (!snap.exists() || Object.keys(snap.val() || {}).length === 0) {
+                remove(ref(db, `rooms/${codeToLeave}`));
+              }
+            })
+            .catch(e => console.log("背景移除玩家狀態失敗:", e));
+        }
+        
         isSelfLeaving = false;
       }
     });
