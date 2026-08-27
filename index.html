@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 返回鍵防護與穩定版</title>
+  <title>猜歌小遊戲 - 功能優化版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -254,7 +254,8 @@
         <div class="setting-row">
           <span class="setting-title">出題時間：</span>
           <div class="range-group">
-            <input type="range" id="maker-time-range" min="30" max="90" step="5" value="30">
+            <!-- 修改上限至 180 秒 -->
+            <input type="range" id="maker-time-range" min="30" max="180" step="5" value="30">
             <span id="maker-time-val">30秒</span>
           </div>
         </div>
@@ -294,7 +295,7 @@
             <li>答對速度越快得分越高，回合結束後結算總分排名。</li>
           </ul>
           <p><b>系統說明：</b>建議使用最新版 Chrome以獲得最佳遊戲體驗。</p>
-          <p><b>版本資訊：</b>v1.0.3</p>
+          <p><b>版本資訊：</b>v1.0.4</p>
         </div>
         <button id="about-close-btn" class="secondary" style="margin-top:15px;">返回首頁</button>
       </div>
@@ -309,14 +310,16 @@
         <div style="flex: 1; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
           <div style="font-weight: bold; color: #ffd700; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 6px;">歷代公告</div>
           <div style="display: flex; flex-direction: column; gap: 5px;">
-            <button class="secondary active-notice" style="text-align: left; font-size: 14px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;">V1.0.3 返回鍵防護全面升級</button>
+            <button class="secondary active-notice" style="text-align: left; font-size: 14px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;">V1.0.4 邏輯與功能優化版</button>
           </div>
         </div>
         <div style="flex: 2; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 15px; font-size: 14px; line-height: 1.6; overflow-y: auto;">
-          <p style="font-weight: bold; font-size: 16px; color: #1db954; margin-bottom: 10px;">版本更新 V1.0.3</p>
+          <p style="font-weight: bold; font-size: 16px; color: #1db954; margin-bottom: 10px;">版本更新 V1.0.4</p>
           <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 6px;">
-            <li>全面攔截手機實體與瀏覽器返回鍵，在任何子頁面按返回時會安全引導回首頁，不會直接退出網頁。</li>
-            <li>優化防誤觸關閉機制。</li>
+            <li>新增出題者超時未出題自動跳過機制。</li>
+            <li>調整跳過按鈕於猜題階段一開始即顯示。</li>
+            <li>新增全體猜中答案自動提前結束回合功能。</li>
+            <li>將房間設定內得出題時間上限擴充至 180 秒。</li>
           </ol>
         </div>
       </div>
@@ -362,6 +365,7 @@
           <input type="text" id="guess-input" placeholder="請輸入答案按 Enter 搶答..." disabled>
           <button id="submit-guess-btn" style="width:90px; font-size:16px;" disabled>搶答</button>
         </div>
+        <!-- 調整為預設可見 (hidden 移除) -->
         <button id="skip-vote-btn" class="secondary hidden" style="background-color: #ff5722; font-size: 15px; padding: 8px;">跳過本題 (0/0)</button>
       </div>
     </div>
@@ -451,28 +455,22 @@
     const bgFileInput = document.getElementById('bg-file-input');
     const resetBgBtn = document.getElementById('reset-bg-btn');
 
-    // 💡 攔截手機及瀏覽器的返回鍵 (popstate)
-    // 預先推入一個歷史紀錄，確保使用者按返回時會觸發事件而不是退出網頁
     history.pushState({ page: 'main' }, '', window.location.href);
 
     window.addEventListener('popstate', (e) => {
-      // 每當玩家按下返回鍵，無論在什麼子頁面、房間或遊戲中，都安全導向回主畫面並清理房間
       if (currentActiveRoomCode) {
         if (confirm("返回將會離開房間，確定要返回首頁嗎？")) {
           leaveRoom();
         } else {
-          // 如果取消，重新推入歷史狀態維持在當前頁面
           history.pushState({ page: 'room' }, '', window.location.href);
           return;
         }
       } else {
         backToMainMenu();
       }
-      // 保持歷史紀錄堆疊
       history.pushState({ page: 'main' }, '', window.location.href);
     });
 
-    // 💡 防止意外重新整理或關閉分頁
     window.addEventListener('beforeunload', (e) => {
       if (currentActiveRoomCode && !isSelfLeaving) {
         e.preventDefault();
@@ -1051,8 +1049,9 @@
         const isMaker = currentMaker && currentMaker.name === myPlayerName;
 
         startTimer(roomData.endTime, () => {
+          // 💡 當出題超時未出題，自動由房主觸發略過此出題者並順延
           if (isHost && roomData.gameState === 'MAKING_QUESTION') {
-            nextRound(roomData, "出題超時！自動進入下一輪");
+            skipMakerTimeout(roomData);
           }
         });
 
@@ -1141,6 +1140,27 @@
       }
     }
 
+    // 💡 出題超時自動略過此玩家邏輯
+    async function skipMakerTimeout(roomData) {
+      if (!isHost) return;
+      stopAllTimers();
+      const currentMaker = roomData.players[roomData.currentMakerIndex];
+      const timeoutMsg = `⏰ 出題者 [${currentMaker ? currentMaker.name : '未知'}] 超時未出題，自動略過！`;
+      sendChatMessage(timeoutMsg, true);
+
+      let nextMakerIdx = (roomData.currentMakerIndex + 1) % roomData.players.length;
+      const nextMaker = roomData.players[nextMakerIdx];
+      const resetPlayers = roomData.players.map(p => ({ ...p, hasGuessedCorrect: false, hasSkipped: false }));
+
+      await update(ref(db, `rooms/${currentActiveRoomCode}`), {
+        gameState: 'MAKING_QUESTION',
+        currentMakerIndex: nextMakerIdx,
+        players: resetPlayers,
+        endTime: Date.now() + ((roomData.makerTime || 30) * 1000),
+        latestFeedback: `👑 請新出題者 [${nextMaker.name}] 開始出題！`
+      });
+    }
+
     submitQuestionBtn.addEventListener('click', async () => {
       const rawAns = document.getElementById('maker-ans-input').value.trim();
       const rawLyrics = document.getElementById('maker-lyrics-input').value.trim();
@@ -1152,7 +1172,7 @@
         return;
       }
 
-      const resetPlayers = activePlayers.map(p => ({ ...p, hasSkipped: false }));
+      const resetPlayers = activePlayers.map(p => ({ ...p, hasSkipped: false, hasGuessedCorrect: false }));
 
       await update(ref(db, `rooms/${currentActiveRoomCode}`), {
         currentAnswer: ans,
@@ -1179,7 +1199,7 @@
 
       if (cleanString(guess) === cleanString(roomData.currentAnswer)) {
         guessInput.value = "";
-        const successMsg = `🎉 恭喜 [${myPlayerName}] 搶先猜對！(正確答案暫不公布，繼續搶答)`;
+        const successMsg = `🎉 恭喜 [${myPlayerName}] 猜對答案！`;
         sendChatMessage(successMsg, true);
 
         await runTransaction(ref(db, `rooms/${currentActiveRoomCode}`), (room) => {
@@ -1193,6 +1213,19 @@
           }
           return room;
         });
+
+        // 💡 檢查是否所有非出題者都已經猜中答案
+        const updatedSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
+        const updatedData = updatedSnap.val();
+        if (updatedData && updatedData.gameState === 'GUESSING') {
+          const currentMaker = updatedData.players[updatedData.currentMakerIndex];
+          const guessers = updatedData.players.filter(p => p.name !== currentMaker.name);
+          const allGuessed = guessers.length > 0 && guessers.every(p => p.hasGuessedCorrect);
+
+          if (isHost && allGuessed) {
+            endRound(updatedData, "所有玩家皆已猜中答案！");
+          }
+        }
 
       } else {
         guessInput.value = "";
@@ -1234,9 +1267,8 @@
         return;
       }
 
-      const remainSec = Math.ceil((roomData.endTime - Date.now()) / 1000);
-
-      if (remainSec <= 15 && remainSec > 0 && roomData.gameState === 'GUESSING') {
+      // 💡 從 15 秒限制改為一開始 (GUESSING 階段) 就隨時可以顯示與投票
+      if (roomData.gameState === 'GUESSING') {
         skipVoteBtn.classList.remove('hidden');
 
         const guessers = roomData.players.filter(p => p.name !== currentMaker.name);
