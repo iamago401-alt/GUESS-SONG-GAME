@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 功能優化版</title>
+  <title>猜歌小遊戲 - 公告更新版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -138,6 +138,15 @@
       display: flex; align-items: center; justify-content: center; transition: background 0.2s;
     }
     .modal-close-x:hover { background: #ff1a1a; }
+
+    /* 公告新標籤樣式 */
+    .notice-badge {
+      position: absolute; top: 2px; right: 6px;
+      background-color: #ffffff; color: #ff0000;
+      font-size: 10px; font-weight: bold; padding: 1px 4px;
+      border-radius: 4px; border: 1px solid #ff0000;
+    }
+    .notice-btn-wrapper { position: relative; width: 100%; }
   </style>
 </head>
 <body>
@@ -147,7 +156,11 @@
     <div class="game-title-hero">歌曲小品遊戲</div>
     <button id="start-btn">開始</button>
     <button id="about-btn" class="secondary">關於</button>
-    <button id="announcement-btn" class="secondary" style="background-color: #2c2c2c; border: 1px solid #1db954;">公告</button>
+    
+    <div class="notice-btn-wrapper">
+      <button id="announcement-btn" class="secondary" style="background-color: #2c2c2c; border: 1px solid #1db954; width: 100%;">公告</button>
+      <span id="notice-new-badge" class="notice-badge">新</span>
+    </div>
   </div>
 
   <!-- 建立/加入房間選擇頁面 -->
@@ -254,7 +267,6 @@
         <div class="setting-row">
           <span class="setting-title">出題時間：</span>
           <div class="range-group">
-            <!-- 修改上限至 180 秒 -->
             <input type="range" id="maker-time-range" min="30" max="180" step="5" value="30">
             <span id="maker-time-val">30秒</span>
           </div>
@@ -295,7 +307,8 @@
             <li>答對速度越快得分越高，回合結束後結算總分排名。</li>
           </ul>
           <p><b>系統說明：</b>建議使用最新版 Chrome以獲得最佳遊戲體驗。</p>
-          <p><b>版本資訊：</b>v1.0.4</p>
+          <!-- 版本資訊更新為 V1.0.2 -->
+          <p><b>版本資訊：</b>v1.0.2</p>
         </div>
         <button id="about-close-btn" class="secondary" style="margin-top:15px;">返回首頁</button>
       </div>
@@ -310,17 +323,36 @@
         <div style="flex: 1; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
           <div style="font-weight: bold; color: #ffd700; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 6px;">歷代公告</div>
           <div style="display: flex; flex-direction: column; gap: 5px;">
-            <button class="secondary active-notice" style="text-align: left; font-size: 14px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;">V1.0.4 邏輯與功能優化版</button>
+            <button id="notice-btn-v102" class="secondary active-notice" style="text-align: left; font-size: 13px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;">版本 V1.0.2 更新</button>
+            <button id="notice-btn-v101" class="secondary" style="text-align: left; font-size: 13px; padding: 8px 10px; background-color: #1a1a1a; border-left: 4px solid #555;">V1.0.1 基礎架構版</button>
           </div>
         </div>
+        
         <div style="flex: 2; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 15px; font-size: 14px; line-height: 1.6; overflow-y: auto;">
-          <p style="font-weight: bold; font-size: 16px; color: #1db954; margin-bottom: 10px;">版本更新 V1.0.4</p>
-          <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 6px;">
-            <li>新增出題者超時未出題自動跳過機制。</li>
-            <li>調整跳過按鈕於猜題階段一開始即顯示。</li>
-            <li>新增全體猜中答案自動提前結束回合功能。</li>
-            <li>將房間設定內得出題時間上限擴充至 180 秒。</li>
-          </ol>
+          <!-- 內容區塊 1：V1.0.2 (預設顯示) -->
+          <div id="notice-content-v102">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-weight: bold; font-size: 16px; color: #1db954;">版本 V1.0.2 更新</span>
+              <span style="font-size: 12px; color: #888;">公布時間：2026-06-07</span>
+            </div>
+            <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 6px;">
+              <li>優化出題者出題時間結束未出題卻沒跳過此玩家的問題。</li>
+              <li>更改猜題者跳過按鈕從15秒後改到一開始就有。</li>
+              <li>優化當所有玩家都猜中答案理應結束這回合這問題。</li>
+              <li>更改將設定裡的出題者出題時間上限從90秒改至180秒。</li>
+              <li>優化防止因誤觸返回鍵直接退出網頁的問題。</li>
+              <li>優化房主無緣無故解散房間的問題。</li>
+            </ol>
+          </div>
+
+          <!-- 內容區塊 2：V1.0.1 -->
+          <div id="notice-content-v101" class="hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-weight: bold; font-size: 16px; color: #aaa;">V1.0.1 基礎架構版</span>
+              <span style="font-size: 12px; color: #888;">公布時間：2026-06-01</span>
+            </div>
+            <p>歌詞猜謎小遊戲正式上線！支援多人連線創建房間、即時聊天、自訂遊戲規則與背景更換，歡迎與朋友一同遊玩同樂。</p>
+          </div>
         </div>
       </div>
       <button id="announcement-close-btn" class="secondary" style="margin-top: 5px;">關閉</button>
@@ -365,7 +397,7 @@
           <input type="text" id="guess-input" placeholder="請輸入答案按 Enter 搶答..." disabled>
           <button id="submit-guess-btn" style="width:90px; font-size:16px;" disabled>搶答</button>
         </div>
-        <!-- 調整為預設可見 (hidden 移除) -->
+        <!-- 猜題階段一開始即可見 -->
         <button id="skip-vote-btn" class="secondary hidden" style="background-color: #ff5722; font-size: 15px; padding: 8px;">跳過本題 (0/0)</button>
       </div>
     </div>
@@ -534,8 +566,34 @@
     });
 
     document.getElementById('about-close-btn').addEventListener('click', () => { aboutModal.classList.add('hidden'); });
-    announcementBtn.addEventListener('click', () => { announcementModal.classList.remove('hidden'); });
+    
+    // 點擊公告按鈕時，打開公告並移除右上角的「新」標籤
+    announcementBtn.addEventListener('click', () => { 
+      announcementModal.classList.remove('hidden');
+      const badge = document.getElementById('notice-new-badge');
+      if (badge) badge.style.display = 'none';
+    });
+
     document.getElementById('announcement-close-btn').addEventListener('click', () => { announcementModal.classList.add('hidden'); });
+
+    // 公告頁籤切換邏輯
+    document.getElementById('notice-btn-v102').addEventListener('click', () => {
+      document.getElementById('notice-content-v102').classList.remove('hidden');
+      document.getElementById('notice-content-v101').classList.add('hidden');
+      document.getElementById('notice-btn-v102').style.backgroundColor = '#222';
+      document.getElementById('notice-btn-v102').style.borderLeftColor = '#1db954';
+      document.getElementById('notice-btn-v101').style.backgroundColor = '#1a1a1a';
+      document.getElementById('notice-btn-v101').style.borderLeftColor = '#555';
+    });
+
+    document.getElementById('notice-btn-v101').addEventListener('click', () => {
+      document.getElementById('notice-content-v101').classList.remove('hidden');
+      document.getElementById('notice-content-v102').classList.add('hidden');
+      document.getElementById('notice-btn-v101').style.backgroundColor = '#222';
+      document.getElementById('notice-btn-v101').style.borderLeftColor = '#1db954';
+      document.getElementById('notice-btn-v102').style.backgroundColor = '#1a1a1a';
+      document.getElementById('notice-btn-v102').style.borderLeftColor = '#555';
+    });
 
     function backToMainMenu() {
       stopAllTimers();
@@ -1049,7 +1107,6 @@
         const isMaker = currentMaker && currentMaker.name === myPlayerName;
 
         startTimer(roomData.endTime, () => {
-          // 💡 當出題超時未出題，自動由房主觸發略過此出題者並順延
           if (isHost && roomData.gameState === 'MAKING_QUESTION') {
             skipMakerTimeout(roomData);
           }
@@ -1140,7 +1197,6 @@
       }
     }
 
-    // 💡 出題超時自動略過此玩家邏輯
     async function skipMakerTimeout(roomData) {
       if (!isHost) return;
       stopAllTimers();
@@ -1214,7 +1270,6 @@
           return room;
         });
 
-        // 💡 檢查是否所有非出題者都已經猜中答案
         const updatedSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
         const updatedData = updatedSnap.val();
         if (updatedData && updatedData.gameState === 'GUESSING') {
@@ -1267,7 +1322,6 @@
         return;
       }
 
-      // 💡 從 15 秒限制改為一開始 (GUESSING 階段) 就隨時可以顯示與投票
       if (roomData.gameState === 'GUESSING') {
         skipVoteBtn.classList.remove('hidden');
 
