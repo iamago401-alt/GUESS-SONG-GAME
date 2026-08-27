@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 按鈕修復終極版</title>
+  <title>猜歌小遊戲 - 延遲公布答案版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -100,11 +100,11 @@
       padding: 12px; font-size: 16px; text-align: center; display: flex; align-items: center; justify-content: center;
     }
 
-    /* 猜錯答案答覆框樣式 */
+    /* 答覆與即時廣播框 */
     .guess-feedback-box {
-      width: 100%; background: #2c1a1a; border: 1px dashed #ff4d4d; border-radius: 6px;
-      padding: 10px 12px; font-size: 15px; color: #ff8888; text-align: center; min-height: 40px;
-      display: flex; align-items: center; justify-content: center; font-weight: bold;
+      width: 100%; background: #1c261c; border: 1px dashed #1db954; border-radius: 6px;
+      padding: 10px 12px; font-size: 15px; color: #88ffaa; text-align: center; min-height: 45px;
+      display: flex; align-items: center; justify-content: center; font-weight: bold; word-break: break-all;
     }
 
     /* 聊天室通用樣式 */
@@ -930,14 +930,22 @@
           guessStatus.innerText = "🔥 搶答開始！請快速打出歌名：";
           guessInput.disabled = false;
           submitGuessBtn.disabled = false;
-          // 不強制搶焦點，讓玩家可以舒適打字
         }
 
         startTimer(roomData.endTime, () => {
           if (isHost && roomData.gameState === 'GUESSING') {
-            nextRound(roomData, "時間到！無人答對，公布答案：" + roomData.currentAnswer);
+            endRound(roomData, "時間到！");
           }
         });
+      }
+      else if (state === 'ROUND_OVER') {
+        stopAllTimers();
+        renderScoreboard(roomData);
+        document.getElementById('maker-panel').classList.add('hidden');
+        document.getElementById('guesser-panel').classList.remove('hidden');
+        document.getElementById('guess-input').disabled = true;
+        submitGuessBtn.disabled = true;
+        document.getElementById('guesser-status').innerText = "🏁 本輪結束，已公布答案！";
       }
       else if (state === 'ENDED') {
         stopAllTimers();
@@ -983,34 +991,27 @@
       if (!roomData || roomData.gameState !== 'GUESSING') return;
 
       if (cleanString(guess) === cleanString(roomData.currentAnswer)) {
-        // 答對了
+        // 有人猜對：加分、告知誰猜對，但答案先不公布，計時器繼續跑直到時間到
         guessInput.value = "";
-        
-        const successMsg = `🎉 恭喜 [${myPlayerName}] 答對了！正確答案是：${roomData.currentAnswer}`;
+        const successMsg = `🎉 恭喜 [${myPlayerName}] 搶先猜對！(正確答案暫不公布，繼續搶答)`;
         sendChatMessage(successMsg, true);
 
         await runTransaction(ref(db, `rooms/${currentActiveRoomCode}`), (room) => {
           if (room && room.gameState === 'GUESSING') {
-            room.gameState = 'ROUND_OVER';
             const winner = room.players.find(p => p.name === myPlayerName);
-            if (winner) winner.score = (winner.score || 0) + 1;
+            if (winner && !winner.hasGuessedCorrect) {
+              winner.score = (winner.score || 0) + 1;
+              winner.hasGuessedCorrect = true;
+            }
             room.latestFeedback = successMsg;
           }
           return room;
         });
 
-        const updatedSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
-        setTimeout(() => {
-          if (updatedSnap.val()) {
-            nextRound(updatedSnap.val(), successMsg);
-          }
-        }, 1500);
-
       } else {
-        // 猜錯了
+        // 猜錯了：在答覆框顯示誰猜錯了什麼答案
         guessInput.value = "";
-        const wrongMsg = `❌ [${myPlayerName}] 猜 "${guess}" -> 猜錯囉！`;
-        
+        const wrongMsg = `❌ [${myPlayerName}] 猜 "${guess}" ➡️ 猜錯囉！`;
         sendChatMessage(wrongMsg, true);
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
           latestFeedback: wrongMsg
@@ -1026,9 +1027,19 @@
       }
     });
 
-    async function nextRound(roomData, announceMsg) {
+    async function endRound(roomData, reasonMsg) {
       if (!isHost) return;
       stopAllTimers();
+
+      // 時間到，正式公布答案與下一位出題者提醒
+      let nextMakerIdx = (roomData.currentMakerIndex + 1) % roomData.players.length;
+      const nextMaker = roomData.players[nextMakerIdx];
+
+      // 重置玩家的本輪搶對狀態
+      const resetPlayers = roomData.players.map(p => ({ ...p, hasGuessedCorrect: false }));
+
+      const finalNotice = `${reasonMsg} 正式答案是：【${roomData.currentAnswer}】。👑 預告：下一位出題者為 [${nextMaker.name}]，請準備！`;
+      sendChatMessage(finalNotice, true);
 
       const winScore = roomData.winScore || 5;
       const winner = roomData.players.find(p => (p.score || 0) >= winScore);
@@ -1040,21 +1051,25 @@
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
           gameState: 'ENDED',
           winBoard: winBoard,
+          players: resetPlayers,
           latestFeedback: `🏆 遊戲結束！由 [${winner.name}] 獲得勝利！`
         });
       } else {
-        let nextMakerIdx = (roomData.currentMakerIndex + 1) % roomData.players.length;
-        const nextMaker = roomData.players[nextMakerIdx];
-        const nextNotice = `${announceMsg} ➡️ 請下一位出題者 [${nextMaker.name}] 準備出題！`;
-
-        sendChatMessage(nextNotice, true);
-
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
-          gameState: 'MAKING_QUESTION',
-          currentMakerIndex: nextMakerIdx,
-          endTime: Date.now() + ((roomData.makerTime || 30) * 1000),
-          latestFeedback: nextNotice
+          gameState: 'ROUND_OVER',
+          players: resetPlayers,
+          latestFeedback: finalNotice
         });
+
+        // 停留 4 秒讓大家看清楚答案與下一位出題提醒，接著自動進入下一輪出題
+        setTimeout(async () => {
+          await update(ref(db, `rooms/${currentActiveRoomCode}`), {
+            gameState: 'MAKING_QUESTION',
+            currentMakerIndex: nextMakerIdx,
+            endTime: Date.now() + ((roomData.makerTime || 30) * 1000),
+            latestFeedback: `👑 請出題者 [${nextMaker.name}] 開始出題！`
+          });
+        }, 4000);
       }
     }
 
