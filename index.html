@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 防誤觸與房主穩定優化版</title>
+  <title>猜歌小遊戲 - 返回鍵防護與穩定版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -294,7 +294,7 @@
             <li>答對速度越快得分越高，回合結束後結算總分排名。</li>
           </ul>
           <p><b>系統說明：</b>建議使用最新版 Chrome以獲得最佳遊戲體驗。</p>
-          <p><b>版本資訊：</b>v1.0.2</p>
+          <p><b>版本資訊：</b>v1.0.3</p>
         </div>
         <button id="about-close-btn" class="secondary" style="margin-top:15px;">返回首頁</button>
       </div>
@@ -309,15 +309,14 @@
         <div style="flex: 1; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
           <div style="font-weight: bold; color: #ffd700; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 6px;">歷代公告</div>
           <div style="display: flex; flex-direction: column; gap: 5px;">
-            <button class="secondary active-notice" style="text-align: left; font-size: 14px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;">V1.0.2 體驗與穩定度優化</button>
+            <button class="secondary active-notice" style="text-align: left; font-size: 14px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;">V1.0.3 返回鍵防護全面升級</button>
           </div>
         </div>
         <div style="flex: 2; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 15px; font-size: 14px; line-height: 1.6; overflow-y: auto;">
-          <p style="font-weight: bold; font-size: 16px; color: #1db954; margin-bottom: 10px;">版本更新 V1.0.2</p>
+          <p style="font-weight: bold; font-size: 16px; color: #1db954; margin-bottom: 10px;">版本更新 V1.0.3</p>
           <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 6px;">
-            <li>優化手機玩家防誤觸返回、重新整理提示防護</li>
-            <li>修復房主訊號短暫異常時導致房間莫名解散的 Bug</li>
-            <li>房間設定介面移至齒輪按鈕，全面更新房間介面</li>
+            <li>全面攔截手機實體與瀏覽器返回鍵，在任何子頁面按返回時會安全引導回首頁，不會直接退出網頁。</li>
+            <li>優化防誤觸關閉機制。</li>
           </ol>
         </div>
       </div>
@@ -452,7 +451,28 @@
     const bgFileInput = document.getElementById('bg-file-input');
     const resetBgBtn = document.getElementById('reset-bg-btn');
 
-    // 💡 防誤觸返回與重新整理警告
+    // 💡 攔截手機及瀏覽器的返回鍵 (popstate)
+    // 預先推入一個歷史紀錄，確保使用者按返回時會觸發事件而不是退出網頁
+    history.pushState({ page: 'main' }, '', window.location.href);
+
+    window.addEventListener('popstate', (e) => {
+      // 每當玩家按下返回鍵，無論在什麼子頁面、房間或遊戲中，都安全導向回主畫面並清理房間
+      if (currentActiveRoomCode) {
+        if (confirm("返回將會離開房間，確定要返回首頁嗎？")) {
+          leaveRoom();
+        } else {
+          // 如果取消，重新推入歷史狀態維持在當前頁面
+          history.pushState({ page: 'room' }, '', window.location.href);
+          return;
+        }
+      } else {
+        backToMainMenu();
+      }
+      // 保持歷史紀錄堆疊
+      history.pushState({ page: 'main' }, '', window.location.href);
+    });
+
+    // 💡 防止意外重新整理或關閉分頁
     window.addEventListener('beforeunload', (e) => {
       if (currentActiveRoomCode && !isSelfLeaving) {
         e.preventDefault();
@@ -650,10 +670,9 @@
       }
     }
 
-    // 💡 修正房主莫名解散房間：改為「移除玩家 / 自動遞補房主」而不是直接刪除整間房
     function setupOnDisconnect(roomCode) {
       const myRef = ref(db, `rooms/${roomCode}`);
-      onDisconnect(myRef).cancel(); // 先清除舊的監聽
+      onDisconnect(myRef).cancel();
       
       onValue(ref(db, ".info/connected"), async (snap) => {
         if (snap.val() === true && roomCode && myPlayerName && !isSelfLeaving) {
@@ -662,7 +681,7 @@
             let pList = roomSnap.val().players || [];
             let updatedList = pList.filter(p => p.name !== myPlayerName);
             if (updatedList.length > 0) {
-              if (isHost) updatedList[0].isHost = true; // 自動遞補下一位為房主
+              if (isHost) updatedList[0].isHost = true;
               onDisconnect(myRef).update({ players: updatedList });
             } else {
               onDisconnect(myRef).remove();
