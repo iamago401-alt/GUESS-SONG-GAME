@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 完全修復終極版</title>
+  <title>猜歌小遊戲 - 按鈕修復終極版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -35,19 +35,10 @@
 
     /* 首頁浮誇標題樣式 */
     .game-title-hero {
-      background-color: #ffffff;
-      color: #000000;
-      font-size: 32px;
-      font-weight: 900;
-      letter-spacing: 4px;
-      padding: 12px 24px;
-      border-radius: 12px;
-      text-align: center;
+      background-color: #ffffff; color: #000000; font-size: 32px; font-weight: 900;
+      letter-spacing: 4px; padding: 12px 24px; border-radius: 12px; text-align: center;
       box-shadow: 0 0 25px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.2);
-      text-transform: uppercase;
-      margin-bottom: 10px;
-      transform: rotate(-2deg);
-      border: 4px solid #000000;
+      text-transform: uppercase; margin-bottom: 10px; transform: rotate(-2deg); border: 4px solid #000000;
     }
 
     /* 房間大廳樣式 */
@@ -109,16 +100,22 @@
       padding: 12px; font-size: 16px; text-align: center; display: flex; align-items: center; justify-content: center;
     }
 
-    /* 聊天室通用樣式 (房間與遊戲共用) */
+    /* 猜錯答案答覆框樣式 */
+    .guess-feedback-box {
+      width: 100%; background: #2c1a1a; border: 1px dashed #ff4d4d; border-radius: 6px;
+      padding: 10px 12px; font-size: 15px; color: #ff8888; text-align: center; min-height: 40px;
+      display: flex; align-items: center; justify-content: center; font-weight: bold;
+    }
+
+    /* 聊天室通用樣式 */
     .chat-box-container {
       width: 100%; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 10px;
-      display: flex; flex-direction: column; gap: 6px; height: 180px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 6px; height: 160px; flex-shrink: 0;
     }
     .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
     .chat-msg { word-break: break-all; }
     .chat-msg .author { font-weight: bold; color: #1db954; }
-    .chat-msg.system { color: #ff9800; font-style: italic; }
-    .chat-input-row { display: flex; gap: 8px; }
+    .chat-msg.system { color: #ff9800; font-style: italic; font-weight: bold; }
 
     /* 彈窗樣式 */
     .modal-overlay {
@@ -293,7 +290,7 @@
       <div class="timer-display" id="game-timer">--</div>
 
       <div id="maker-panel" class="hidden" style="width:100%; display:flex; flex-direction:column; gap:10px;">
-        <h3>👑 請輸入題目資訊：</h3>
+        <h3 id="maker-instruction-title">👑 請輸入題目資訊：</h3>
         <input type="text" id="maker-ans-input" placeholder="請輸入正確歌名（答案）">
         <textarea id="maker-lyrics-input" rows="3" placeholder="請輸入歌詞題目"></textarea>
         <button id="submit-question-btn">送出題目</button>
@@ -302,6 +299,8 @@
       <div id="guesser-panel" class="hidden" style="width:100%; display:flex; flex-direction:column; gap:10px; align-items:center;">
         <div id="guesser-status" style="font-size:15px; color:#ffd700;">等待出題者出題...</div>
         <div class="lyrics-box" id="display-lyrics">歌詞將顯示於此</div>
+        <!-- 答覆與即時廣播框 -->
+        <div class="guess-feedback-box" id="guess-feedback-box">💡 尚無猜題記錄</div>
         <div style="width:100%; display:flex; gap:8px;">
           <input type="text" id="guess-input" placeholder="請輸入答案按 Enter 搶答..." disabled>
           <button id="submit-guess-btn" style="width:90px; font-size:16px;" disabled>搶答</button>
@@ -787,7 +786,8 @@
           gameState: 'INTRO',
           players: updatedPlayers,
           currentMakerIndex: makerIdx,
-          roundCount: 1
+          roundCount: 1,
+          latestFeedback: "💡 遊戲開始，等待出題..."
         });
       } else {
         const myData = activePlayers.find(p => p.name === myPlayerName);
@@ -834,6 +834,12 @@
     function handleGameState(roomData) {
       const state = roomData.gameState;
 
+      // 更新答覆與廣播框內容
+      const feedbackBox = document.getElementById('guess-feedback-box');
+      if (feedbackBox) {
+        feedbackBox.innerText = roomData.latestFeedback || "💡 尚無猜題記錄";
+      }
+
       if (state === 'LOBBY') {
         stopAllTimers();
         roomView.classList.remove('hidden');
@@ -849,9 +855,11 @@
         document.getElementById('total-count').innerText = roomData.players.length;
 
         if (isHost && readyCount === roomData.players.length) {
+          const nextMaker = roomData.players[roomData.currentMakerIndex];
           update(ref(db, `rooms/${currentActiveRoomCode}`), {
             gameState: 'MAKING_QUESTION',
-            endTime: Date.now() + (roomData.makerTime * 1000)
+            endTime: Date.now() + (roomData.makerTime * 1000),
+            latestFeedback: `👑 請出題者 [${nextMaker ? nextMaker.name : ''}] 開始出題！`
           });
         }
       } 
@@ -873,6 +881,7 @@
         if (isMaker) {
           document.getElementById('maker-panel').classList.remove('hidden');
           document.getElementById('guesser-panel').classList.add('hidden');
+          document.getElementById('maker-instruction-title').innerText = "👑 輪到你了！請輸入題目資訊：";
         } else {
           document.getElementById('maker-panel').classList.add('hidden');
           document.getElementById('guesser-panel').classList.remove('hidden');
@@ -888,11 +897,15 @@
         document.getElementById('guesser-panel').classList.remove('hidden');
         document.getElementById('guesser-status').innerText = "題目已出好！準備倒數搶答！";
         document.getElementById('display-lyrics').innerText = "3 秒後公開歌詞...";
+        document.getElementById('guess-input').disabled = true;
+        submitGuessBtn.disabled = true;
+
         startTimer(roomData.endTime, () => {
           if (isHost && roomData.gameState === 'COUNTDOWN') {
             update(ref(db, `rooms/${currentActiveRoomCode}`), {
               gameState: 'GUESSING',
-              endTime: Date.now() + (roomData.guessTime * 1000)
+              endTime: Date.now() + (roomData.guessTime * 1000),
+              latestFeedback: "🔥 搶答開始！請輸入答案"
             });
           }
         });
@@ -917,7 +930,7 @@
           guessStatus.innerText = "🔥 搶答開始！請快速打出歌名：";
           guessInput.disabled = false;
           submitGuessBtn.disabled = false;
-          guessInput.focus();
+          // 不強制搶焦點，讓玩家可以舒適打字
         }
 
         startTimer(roomData.endTime, () => {
@@ -951,7 +964,8 @@
         currentAnswer: ans,
         currentLyrics: lyrics,
         gameState: 'COUNTDOWN',
-        endTime: Date.now() + 3000
+        endTime: Date.now() + 3000,
+        latestFeedback: "🎯 題目已出好，3秒後準備搶答！"
       });
 
       document.getElementById('maker-ans-input').value = "";
@@ -959,42 +973,62 @@
     });
 
     async function checkGuess() {
-      const rawGuess = document.getElementById('guess-input').value.trim();
+      const guessInput = document.getElementById('guess-input');
+      const rawGuess = guessInput.value.trim();
       if (!rawGuess) return;
       const guess = filterBadWords(rawGuess);
 
       const roomSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
       const roomData = roomSnap.val();
-      if (roomData.gameState !== 'GUESSING') return;
+      if (!roomData || roomData.gameState !== 'GUESSING') return;
 
       if (cleanString(guess) === cleanString(roomData.currentAnswer)) {
-        document.getElementById('guess-input').value = "";
+        // 答對了
+        guessInput.value = "";
+        
+        const successMsg = `🎉 恭喜 [${myPlayerName}] 答對了！正確答案是：${roomData.currentAnswer}`;
+        sendChatMessage(successMsg, true);
+
         await runTransaction(ref(db, `rooms/${currentActiveRoomCode}`), (room) => {
           if (room && room.gameState === 'GUESSING') {
             room.gameState = 'ROUND_OVER';
             const winner = room.players.find(p => p.name === myPlayerName);
             if (winner) winner.score = (winner.score || 0) + 1;
+            room.latestFeedback = successMsg;
           }
           return room;
         });
 
         const updatedSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
-        nextRound(updatedSnap.val(), `🎉 ${myPlayerName} 答對了！答案是：${roomData.currentAnswer}`);
+        setTimeout(() => {
+          if (updatedSnap.val()) {
+            nextRound(updatedSnap.val(), successMsg);
+          }
+        }, 1500);
+
       } else {
-        alert("答案不正確，再試一次！");
-        document.getElementById('guess-input').value = "";
+        // 猜錯了
+        guessInput.value = "";
+        const wrongMsg = `❌ [${myPlayerName}] 猜 "${guess}" -> 猜錯囉！`;
+        
+        sendChatMessage(wrongMsg, true);
+        await update(ref(db, `rooms/${currentActiveRoomCode}`), {
+          latestFeedback: wrongMsg
+        });
       }
     }
 
     submitGuessBtn.addEventListener('click', checkGuess);
     document.getElementById('guess-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') checkGuess();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        checkGuess();
+      }
     });
 
     async function nextRound(roomData, announceMsg) {
       if (!isHost) return;
       stopAllTimers();
-      alert(announceMsg);
 
       const winScore = roomData.winScore || 5;
       const winner = roomData.players.find(p => (p.score || 0) >= winScore);
@@ -1005,14 +1039,21 @@
 
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
           gameState: 'ENDED',
-          winBoard: winBoard
+          winBoard: winBoard,
+          latestFeedback: `🏆 遊戲結束！由 [${winner.name}] 獲得勝利！`
         });
       } else {
         let nextMakerIdx = (roomData.currentMakerIndex + 1) % roomData.players.length;
+        const nextMaker = roomData.players[nextMakerIdx];
+        const nextNotice = `${announceMsg} ➡️ 請下一位出題者 [${nextMaker.name}] 準備出題！`;
+
+        sendChatMessage(nextNotice, true);
+
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
           gameState: 'MAKING_QUESTION',
           currentMakerIndex: nextMakerIdx,
-          endTime: Date.now() + ((roomData.makerTime || 30) * 1000)
+          endTime: Date.now() + ((roomData.makerTime || 30) * 1000),
+          latestFeedback: nextNotice
         });
       }
     }
@@ -1048,7 +1089,8 @@
       resultModal.classList.add('hidden');
       if (isHost) {
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
-          gameState: 'LOBBY'
+          gameState: 'LOBBY',
+          latestFeedback: "💡 房間已重設，等待開始..."
         });
       }
     });
