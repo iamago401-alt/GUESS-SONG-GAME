@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 齒輪設定與公告更新版</title>
+  <title>猜歌小遊戲 - 防誤觸與房主穩定優化版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -132,7 +132,6 @@
     }
     .modal-box.wide { max-width: 650px; }
     
-    /* 彈窗右上角關閉按鈕 */
     .modal-close-x {
       position: absolute; top: 12px; right: 15px; background: #ff4d4d; color: white; border: none;
       width: 30px; height: 30px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer;
@@ -179,7 +178,6 @@
     <div class="top-bar">
       <div style="display:flex; align-items:center; gap:10px;">
         <button class="back-btn" id="leave-room-btn" title="離開房間">↩</button>
-        <!-- 齒輪設定按鈕 -->
         <button id="open-settings-modal-btn" class="secondary" style="width:auto; padding:6px 12px; font-size:16px;" title="房間設定">⚙️ 設定</button>
       </div>
       <div>👥 <span id="current-players">1</span>/<span id="max-players">16</span></div>
@@ -188,18 +186,14 @@
 
     <div class="room-main-content">
       <div class="room-left">
-        <!-- 玩家等候區 -->
         <div style="background: rgba(255,255,255,0.03); border: 1px solid #333; border-radius: 8px; padding: 12px; display:flex; flex-direction:column; gap:10px;">
           <div style="font-weight:bold; color:#1db954; font-size:15px;">👥 玩家等候區</div>
           <div class="players-container" id="players-list"></div>
         </div>
-
-        <!-- 遊戲開始/準備按鈕移至等候區下方 -->
         <button id="main-action-btn">開始遊戲</button>
       </div>
 
       <div class="room-right">
-        <!-- 累積勝場榜 -->
         <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
           <div style="font-size:16px; font-weight:bold; color:#ffd700; margin-bottom:8px; text-align:center;">🏆 累積勝場榜</div>
           <ul class="win-board-list" id="win-board-list" style="list-style:none; display:flex; flex-direction:column; gap:6px;">
@@ -207,7 +201,6 @@
           </ul>
         </div>
 
-        <!-- 房間大廳聊天室 -->
         <div class="chat-box-container" style="flex:1;">
           <div class="chat-messages" id="room-chat-messages"></div>
           <div class="chat-input-row">
@@ -219,7 +212,7 @@
     </div>
   </div>
 
-  <!-- 房間設定彈窗 (齒輪按鈕點擊後彈出) -->
+  <!-- 房間設定彈窗 -->
   <div id="settings-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <button class="modal-close-x" id="close-settings-modal-btn">✕</button>
@@ -301,7 +294,7 @@
             <li>答對速度越快得分越高，回合結束後結算總分排名。</li>
           </ul>
           <p><b>系統說明：</b>建議使用最新版 Chrome以獲得最佳遊戲體驗。</p>
-          <p><b>版本資訊：</b>v1.0.1</p>
+          <p><b>版本資訊：</b>v1.0.2</p>
         </div>
         <button id="about-close-btn" class="secondary" style="margin-top:15px;">返回首頁</button>
       </div>
@@ -313,23 +306,18 @@
     <div class="modal-box wide">
       <h2 style="color:#1db954;">📜 遊戲公告</h2>
       <div style="display: flex; gap: 15px; text-align: left; min-height: 250px;">
-        <!-- 左手邊：歷代公告清單 -->
         <div style="flex: 1; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
           <div style="font-weight: bold; color: #ffd700; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 6px;">歷代公告</div>
-          <div style="display: flex; flex-direction: column; gap: 5px;" id="announcement-list">
-            <button class="secondary active-notice" style="text-align: left; font-size: 14px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;" onclick="showNotice(1)">V1.0.1 版本更新</button>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <button class="secondary active-notice" style="text-align: left; font-size: 14px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;">V1.0.2 體驗與穩定度優化</button>
           </div>
         </div>
-        <!-- 右手邊：公告詳細內容 -->
-        <div style="flex: 2; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 15px; font-size: 14px; line-height: 1.6; overflow-y: auto;" id="announcement-content">
-          <p style="font-weight: bold; font-size: 16px; color: #1db954; margin-bottom: 10px;">版本更新 V1.0.1</p>
+        <div style="flex: 2; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 15px; font-size: 14px; line-height: 1.6; overflow-y: auto;">
+          <p style="font-weight: bold; font-size: 16px; color: #1db954; margin-bottom: 10px;">版本更新 V1.0.2</p>
           <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 6px;">
-            <li>修正非房主玩家當猜題者無法搶答的問題</li>
-            <li>新增猜題者可看見自己和其他猜題者猜錯的答案</li>
-            <li>新增猜題時間15秒左右可選擇跳過</li>
-            <li>新增房間背景可選擇上傳圖片作為背景又或者可使用自定義調色盤</li>
-            <li>新增公告區塊</li>
-            <li>房間設定介面移至齒輪按鈕 更新房間介面</li>
+            <li>優化手機玩家防誤觸返回、重新整理提示防護</li>
+            <li>修復房主訊號短暫異常時導致房間莫名解散的 Bug</li>
+            <li>房間設定介面移至齒輪按鈕，全面更新房間介面</li>
           </ol>
         </div>
       </div>
@@ -464,6 +452,14 @@
     const bgFileInput = document.getElementById('bg-file-input');
     const resetBgBtn = document.getElementById('reset-bg-btn');
 
+    // 💡 防誤觸返回與重新整理警告
+    window.addEventListener('beforeunload', (e) => {
+      if (currentActiveRoomCode && !isSelfLeaving) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
     function filterBadWords(text) {
       let filtered = text;
       BAD_WORDS.forEach(word => {
@@ -505,13 +501,8 @@
       }
     }
 
-    // 設定彈窗開啟/關閉
-    openSettingsModalBtn.addEventListener('click', () => {
-      settingsModal.classList.remove('hidden');
-    });
-    closeSettingsModalBtn.addEventListener('click', () => {
-      settingsModal.classList.add('hidden');
-    });
+    openSettingsModalBtn.addEventListener('click', () => { settingsModal.classList.remove('hidden'); });
+    closeSettingsModalBtn.addEventListener('click', () => { settingsModal.classList.add('hidden'); });
 
     aboutBtn.addEventListener('click', () => {
       document.getElementById('about-page-1').classList.remove('hidden');
@@ -524,17 +515,9 @@
       document.getElementById('about-page-2').classList.remove('hidden');
     });
 
-    document.getElementById('about-close-btn').addEventListener('click', () => {
-      aboutModal.classList.add('hidden');
-    });
-
-    announcementBtn.addEventListener('click', () => {
-      announcementModal.classList.remove('hidden');
-    });
-
-    document.getElementById('announcement-close-btn').addEventListener('click', () => {
-      announcementModal.classList.add('hidden');
-    });
+    document.getElementById('about-close-btn').addEventListener('click', () => { aboutModal.classList.add('hidden'); });
+    announcementBtn.addEventListener('click', () => { announcementModal.classList.remove('hidden'); });
+    document.getElementById('announcement-close-btn').addEventListener('click', () => { announcementModal.classList.add('hidden'); });
 
     function backToMainMenu() {
       stopAllTimers();
@@ -578,16 +561,12 @@
       }
     });
 
-    uploadBgBtn.addEventListener('click', () => {
-      if (!isHost) return;
-      bgFileInput.click();
-    });
+    uploadBgBtn.addEventListener('click', () => { if (!isHost) return; bgFileInput.click(); });
 
     bgFileInput.addEventListener('change', (e) => {
       if (!isHost) return;
       const file = e.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = async function (uploadEvent) {
         const base64Image = uploadEvent.target.result;
@@ -663,7 +642,7 @@
         sendChatMessage(`玩家 [${leavingUser}] 退出遊戲`, true);
         activePlayers = activePlayers.filter(p => p.name !== leavingUser);
         if (activePlayers.length > 0) {
-          if (isHost) activePlayers[0].isHost = true;
+          if (isHost && activePlayers.length > 0) activePlayers[0].isHost = true;
           await update(ref(db, `rooms/${targetRoomCode}`), { players: activePlayers });
         } else {
           await set(ref(db, `rooms/${targetRoomCode}`), null);
@@ -671,19 +650,22 @@
       }
     }
 
+    // 💡 修正房主莫名解散房間：改為「移除玩家 / 自動遞補房主」而不是直接刪除整間房
     function setupOnDisconnect(roomCode) {
       const myRef = ref(db, `rooms/${roomCode}`);
+      onDisconnect(myRef).cancel(); // 先清除舊的監聽
+      
       onValue(ref(db, ".info/connected"), async (snap) => {
-        if (snap.val() === true && roomCode && myPlayerName) {
+        if (snap.val() === true && roomCode && myPlayerName && !isSelfLeaving) {
           const roomSnap = await get(myRef);
           if (roomSnap.exists()) {
             let pList = roomSnap.val().players || [];
-            pList = pList.filter(p => p.name !== myPlayerName);
-            if (pList.length === 0) {
-              onDisconnect(myRef).remove();
+            let updatedList = pList.filter(p => p.name !== myPlayerName);
+            if (updatedList.length > 0) {
+              if (isHost) updatedList[0].isHost = true; // 自動遞補下一位為房主
+              onDisconnect(myRef).update({ players: updatedList });
             } else {
-              if (isHost && pList.length > 0) pList[0].isHost = true;
-              onDisconnect(myRef).update({ players: pList });
+              onDisconnect(myRef).remove();
             }
           }
         }
@@ -704,7 +686,7 @@
 
           const self = activePlayers.find(p => p.name === myPlayerName);
           if (!self) {
-            alert("您已被踢出房間或房間已解散");
+            alert("您已被踢出房間或連線中斷");
             showRoomSelectionScreen();
             return;
           }
