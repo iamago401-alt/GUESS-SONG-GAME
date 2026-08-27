@@ -3,13 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 15秒跳過投票版</title>
+  <title>猜歌小遊戲 - 背景自訂版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: #121212; color: #ffffff; font-family: Arial, sans-serif;
       display: flex; justify-content: center; align-items: center; min-height: 100vh;
       padding: 10px;
+      /* 支援動態背景圖片與顏色 */
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: background 0.3s ease, background-color 0.3s ease;
     }
     .screen {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -45,11 +50,12 @@
     /* 房間大廳樣式 */
     #room-view {
       width: 100%; max-width: 900px; min-height: 90vh; display: flex; flex-direction: column;
-      gap: 15px; padding: 15px; background-color: rgba(18, 18, 18, 0.9); border-radius: 12px;
+      gap: 15px; padding: 15px; background-color: rgba(18, 18, 18, 0.85); border-radius: 12px;
+      backdrop-filter: blur(5px);
     }
     .top-bar {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 20px; border-radius: 8px; background-color: rgba(0, 0, 0, 0.4);
+      padding: 12px 20px; border-radius: 8px; background-color: rgba(0, 0, 0, 0.5);
     }
     .back-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; width: auto; padding: 0; }
     
@@ -69,7 +75,7 @@
     .ready-tag { color: #00d2ff; font-weight: bold; font-size: 14px; }
     .kick-btn { background: none; border: none; color: #ff4d4d; font-size: 16px; font-weight: bold; cursor: pointer; width: auto; }
 
-    .settings-container { padding: 15px; border-radius: 8px; background-color: #1e1e1e; display: flex; flex-direction: column; gap: 12px; }
+    .settings-container { padding: 15px; border-radius: 8px; background-color: rgba(30, 30, 30, 0.9); display: flex; flex-direction: column; gap: 12px; }
     .setting-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .setting-title { font-weight: bold; min-width: 100px; }
     .range-group { display: flex; align-items: center; gap: 10px; flex: 1; }
@@ -79,8 +85,8 @@
     /* 遊戲畫面樣式 */
     #game-view {
       width: 100%; max-width: 800px; height: 95vh; display: flex; flex-direction: column;
-      gap: 10px; padding: 15px; background: #1e1e1e; border-radius: 12px;
-      overflow: hidden; justify-content: space-between;
+      gap: 10px; padding: 15px; background: rgba(30, 30, 30, 0.9); border-radius: 12px;
+      overflow: hidden; justify-content: space-between; backdrop-filter: blur(5px);
     }
     .game-main-area { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-height: 0; }
     .game-scoreboard {
@@ -179,6 +185,21 @@
           <div class="setting-row">
             <span class="setting-title">模式：</span>
             <button style="flex:1;" class="active">歌詞猜謎</button>
+          </div>
+
+          <!-- 背景自訂設定選項 -->
+          <div class="setting-row" style="flex-direction:column; align-items:stretch; gap:6px; background:rgba(0,0,0,0.2); padding:8px; border-radius:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="setting-title">房間背景：</span>
+              <button id="reset-bg-btn" class="secondary" style="width:auto; padding:4px 8px; font-size:12px;">重設預設背景</button>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <!-- 調色盤選色 -->
+              <input type="color" id="bg-color-picker" value="#121212" style="width:45px; height:38px; border:none; background:none; cursor:pointer;" title="自定義調色盤">
+              <!-- 圖片上傳按鈕 -->
+              <input type="file" id="bg-file-input" accept="image/*" style="display:none;">
+              <button id="upload-bg-btn" class="secondary" style="flex:1; font-size:14px; padding:8px;">📁 上傳背景圖片</button>
+            </div>
           </div>
 
           <div class="setting-row">
@@ -387,6 +408,10 @@
     const winScoreRange = document.getElementById('win-score-range');
     const makerTimeRange = document.getElementById('maker-time-range');
     const guessTimeRange = document.getElementById('guess-time-range');
+    const bgColorPicker = document.getElementById('bg-color-picker');
+    const uploadBgBtn = document.getElementById('upload-bg-btn');
+    const bgFileInput = document.getElementById('bg-file-input');
+    const resetBgBtn = document.getElementById('reset-bg-btn');
 
     function filterBadWords(text) {
       let filtered = text;
@@ -416,6 +441,20 @@
       document.getElementById('game-timer').innerText = "--";
     }
 
+    // 套用背景樣式到畫面上
+    function applyRoomBackground(bgType, bgValue) {
+      if (bgType === 'image') {
+        document.body.style.backgroundImage = `url('${bgValue}')`;
+        document.body.style.backgroundColor = '#121212';
+      } else if (bgType === 'color') {
+        document.body.style.backgroundImage = 'none';
+        document.body.style.backgroundColor = bgValue;
+      } else {
+        document.body.style.backgroundImage = 'none';
+        document.body.style.backgroundColor = '#121212';
+      }
+    }
+
     aboutBtn.addEventListener('click', () => {
       document.getElementById('about-page-1').classList.remove('hidden');
       document.getElementById('about-page-2').classList.add('hidden');
@@ -436,6 +475,7 @@
       if (roomListenerRef) { off(roomListenerRef); roomListenerRef = null; }
       if (chatListenerRef) { off(chatListenerRef); chatListenerRef = null; }
       currentActiveRoomCode = "";
+      applyRoomBackground('default', '');
       
       roomScreen.classList.add('hidden');
       joinCodeScreen.classList.add('hidden');
@@ -449,9 +489,59 @@
     document.getElementById('back-to-main-from-code-btn').addEventListener('click', backToMainMenu);
 
     function toggleSettingsPermission() {
-      const inputs = [playerLimitRange, winScoreRange, makerTimeRange, guessTimeRange];
-      inputs.forEach(input => { input.disabled = !isHost; });
+      const inputs = [playerLimitRange, winScoreRange, makerTimeRange, guessTimeRange, bgColorPicker, uploadBgBtn, resetBgBtn];
+      inputs.forEach(input => {
+        if (input.tagName === 'INPUT' && input.type === 'file') {
+          input.disabled = !isHost;
+        } else {
+          input.disabled = !isHost;
+          input.style.opacity = isHost ? "1" : "0.5";
+          input.style.cursor = isHost ? "pointer" : "not-allowed";
+        }
+      });
     }
+
+    // 房主調色盤自定義背景
+    bgColorPicker.addEventListener('input', (e) => {
+      if (!isHost) return;
+      const colorVal = e.target.value;
+      applyRoomBackground('color', colorVal);
+      if (currentActiveRoomCode) {
+        update(ref(db, `rooms/${currentActiveRoomCode}`), { bgType: 'color', bgValue: colorVal });
+      }
+    });
+
+    // 房主上傳背景圖片檔案
+    uploadBgBtn.addEventListener('click', () => {
+      if (!isHost) return;
+      bgFileInput.click();
+    });
+
+    bgFileInput.addEventListener('change', (e) => {
+      if (!isHost) return;
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async function (uploadEvent) {
+        const base64Image = uploadEvent.target.result;
+        applyRoomBackground('image', base64Image);
+        if (currentActiveRoomCode) {
+          await update(ref(db, `rooms/${currentActiveRoomCode}`), { bgType: 'image', bgValue: base64Image });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // 重設背景
+    resetBgBtn.addEventListener('click', async () => {
+      if (!isHost) return;
+      applyRoomBackground('default', '');
+      bgColorPicker.value = "#121212";
+      if (currentActiveRoomCode) {
+        await update(ref(db, `rooms/${currentActiveRoomCode}`), { bgType: 'default', bgValue: '' });
+      }
+    });
 
     playerLimitRange.addEventListener('change', (e) => {
       if (!isHost) return;
@@ -482,6 +572,7 @@
       if (roomListenerRef) { off(roomListenerRef); roomListenerRef = null; }
       if (chatListenerRef) { off(chatListenerRef); chatListenerRef = null; }
       currentActiveRoomCode = "";
+      applyRoomBackground('default', '');
       mainScreen.classList.add('hidden');
       joinCodeScreen.classList.add('hidden');
       gameView.classList.add('hidden');
@@ -554,6 +645,16 @@
 
           isHost = !!self.isHost;
           toggleSettingsPermission();
+
+          // 同步背景設定
+          if (roomData.bgType && roomData.bgValue) {
+            applyRoomBackground(roomData.bgType, roomData.bgValue);
+            if (!isHost && roomData.bgType === 'color') {
+              bgColorPicker.value = roomData.bgValue;
+            }
+          } else {
+            applyRoomBackground('default', '');
+          }
 
           if (!isHost) {
             playerLimitRange.value = roomData.maxPlayers || 16;
@@ -727,6 +828,8 @@
         winScore: parseInt(winScoreRange.value),
         makerTime: parseInt(makerTimeRange.value),
         guessTime: parseInt(guessTimeRange.value),
+        bgType: 'default',
+        bgValue: '',
         gameState: 'LOBBY',
         players: activePlayers
       });
@@ -838,7 +941,6 @@
     function handleGameState(roomData) {
       const state = roomData.gameState;
 
-      // 更新答覆與廣播框內容
       const feedbackBox = document.getElementById('guess-feedback-box');
       if (feedbackBox) {
         feedbackBox.innerText = roomData.latestFeedback || "💡 尚無猜題記錄";
@@ -941,7 +1043,6 @@
           submitGuessBtn.disabled = false;
         }
 
-        // 立即更新一次跳過按鈕的 UI 狀態
         updateSkipVoteUI(roomData);
 
         startTimer(roomData.endTime, () => {
@@ -982,7 +1083,6 @@
         return;
       }
 
-      // 重置所有人的跳過狀態
       const resetPlayers = activePlayers.map(p => ({ ...p, hasSkipped: false }));
 
       await update(ref(db, `rooms/${currentActiveRoomCode}`), {
@@ -1043,7 +1143,6 @@
       }
     });
 
-    // 點擊跳過投票按鈕
     skipVoteBtn.addEventListener('click', async () => {
       const roomRef = ref(db, `rooms/${currentActiveRoomCode}`);
       await runTransaction(roomRef, (room) => {
@@ -1061,20 +1160,16 @@
       const currentMaker = roomData.players[roomData.currentMakerIndex];
       const isMaker = currentMaker && currentMaker.name === myPlayerName;
       
-      // 如果是出題者，絕對不顯示跳過按鈕
       if (isMaker) {
         skipVoteBtn.classList.add('hidden');
         return;
       }
 
-      // 計算還剩多少秒
       const remainSec = Math.ceil((roomData.endTime - Date.now()) / 1000);
 
-      // 當時間剩 15 秒（含）以內，且遊戲在猜題中，顯示按鈕
       if (remainSec <= 15 && remainSec > 0 && roomData.gameState === 'GUESSING') {
         skipVoteBtn.classList.remove('hidden');
 
-        // 計算猜題者總人數與已按下跳過人數
         const guessers = roomData.players.filter(p => p.name !== currentMaker.name);
         const skippedCount = guessers.filter(p => p.hasSkipped).length;
         skipVoteBtn.innerText = `跳過本題 (${skippedCount}/${guessers.length})`;
@@ -1089,7 +1184,6 @@
           skipVoteBtn.classList.remove('skip-active');
         }
 
-        // 如果所有猜題者都按了跳過，由房主（或任一客戶端觸發）自動將時間歸0結算
         if (isHost && skippedCount >= guessers.length && guessers.length > 0) {
           endRound(roomData, "全體玩家同意跳過！");
         }
@@ -1151,7 +1245,6 @@
         } else {
           document.getElementById('game-timer').innerText = remain + "s";
           
-          // 每次時鐘更新時，如果正在猜題階段，就即時更新按鈕顯示與狀態
           const roomSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
           if (roomSnap.exists()) {
             const rData = roomSnap.val();
