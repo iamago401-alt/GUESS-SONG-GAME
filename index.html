@@ -33,6 +33,23 @@
     button.secondary:hover { background-color: #444; }
     button.ready-active { background-color: #2196F3; }
 
+    /* 首頁浮誇標題樣式 */
+    .game-title-hero {
+      background-color: #ffffff;
+      color: #000000;
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.2);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      transform: rotate(-2deg);
+      border: 4px solid #000000;
+    }
+
     /* 房間大廳樣式 */
     #room-view {
       width: 100%; max-width: 900px; min-height: 90vh; display: flex; flex-direction: column;
@@ -118,6 +135,7 @@
 
   <!-- 首頁 -->
   <div id="main-screen" class="screen">
+    <div class="game-title-hero">歌曲小品遊戲</div>
     <button id="start-btn">開始</button>
     <button id="about-btn" class="secondary">關於</button>
   </div>
