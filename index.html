@@ -307,7 +307,6 @@
             <li>答對速度越快得分越高，回合結束後結算總分排名。</li>
           </ul>
           <p><b>系統說明：</b>建議使用最新版 Chrome以獲得最佳遊戲體驗。</p>
-          <!-- 版本資訊更新為 V1.0.2 -->
           <p><b>版本資訊：</b>v1.0.2</p>
         </div>
         <button id="about-close-btn" class="secondary" style="margin-top:15px;">返回首頁</button>
@@ -324,7 +323,7 @@
           <div style="font-weight: bold; color: #ffd700; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 6px;">歷代公告</div>
           <div style="display: flex; flex-direction: column; gap: 5px;">
             <button id="notice-btn-v102" class="secondary active-notice" style="text-align: left; font-size: 13px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;">版本 V1.0.2 更新</button>
-            <button id="notice-btn-v101" class="secondary" style="text-align: left; font-size: 13px; padding: 8px 10px; background-color: #1a1a1a; border-left: 4px solid #555;">V1.0.1 基礎架構版</button>
+            <button id="notice-btn-v101" class="secondary" style="text-align: left; font-size: 13px; padding: 8px 10px; background-color: #1a1a1a; border-left: 4px solid #555;">版本 V1.0.1 更新</button>
           </div>
         </div>
         
@@ -345,13 +344,20 @@
             </ol>
           </div>
 
-          <!-- 內容區塊 2：V1.0.1 -->
+          <!-- 內容區塊 2：V1.0.1 (修正為指定的原始內容) -->
           <div id="notice-content-v101" class="hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: bold; font-size: 16px; color: #aaa;">V1.0.1 基礎架構版</span>
+              <span style="font-weight: bold; font-size: 16px; color: #aaa;">版本 V1.0.1 更新</span>
               <span style="font-size: 12px; color: #888;">公布時間：2026-06-01</span>
             </div>
-            <p>歌詞猜謎小遊戲正式上線！支援多人連線創建房間、即時聊天、自訂遊戲規則與背景更換，歡迎與朋友一同遊玩同樂。</p>
+            <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 6px;">
+              <li>修正非房主玩家當猜題者無法搶答的問題</li>
+              <li>新增猜題者可看見自己和其他猜題者猜錯的答案</li>
+              <li>新增猜題時間15秒左右可選擇跳過</li>
+              <li>新增房間背景可選擇上傳圖片作為背景又或者可使用自定義調色盤</li>
+              <li>新增公告區塊</li>
+              <li>房間設定介面移至齒輪按鈕 更新房間介面</li>
+            </ol>
           </div>
         </div>
       </div>
