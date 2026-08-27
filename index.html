@@ -941,7 +941,7 @@
           submitGuessBtn.disabled = false;
         }
 
-        // 更新跳過按鈕的投票狀態與 UI 顯示
+        // 立即更新一次跳過按鈕的 UI 狀態
         updateSkipVoteUI(roomData);
 
         startTimer(roomData.endTime, () => {
@@ -1060,6 +1060,8 @@
     function updateSkipVoteUI(roomData) {
       const currentMaker = roomData.players[roomData.currentMakerIndex];
       const isMaker = currentMaker && currentMaker.name === myPlayerName;
+      
+      // 如果是出題者，絕對不顯示跳過按鈕
       if (isMaker) {
         skipVoteBtn.classList.add('hidden');
         return;
@@ -1149,7 +1151,7 @@
         } else {
           document.getElementById('game-timer').innerText = remain + "s";
           
-          // 每次時鐘更新時，如果在猜題階段，順便刷新 15 秒跳過按鈕狀態
+          // 每次時鐘更新時，如果正在猜題階段，就即時更新按鈕顯示與狀態
           const roomSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
           if (roomSnap.exists()) {
             const rData = roomSnap.val();
