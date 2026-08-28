@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猜歌小遊戲 - 公告更新版</title>
+  <title>猜歌小遊戲 - 全員參與計分版</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -304,11 +304,11 @@
           <p><b>遊戲規則：</b></p>
           <ul style="margin-left:20px; margin-bottom:10px;">
             <li>建立或加入房間後即可開始對局。</li>
-            <li>根據系統提示在指定時間內進行猜題與回答。</li>
+            <li>全員參與制：每個人都要猜中才能推進下一輪，但分數只有首位猜對的人獲得！</li>
             <li>答對速度越快得分越高，回合結束後結算總分排名。</li>
           </ul>
           <p><b>系統說明：</b>建議使用最新版 Chrome以獲得最佳遊戲體驗。</p>
-          <p><b>版本資訊：</b>v1.0.2</p>
+          <p><b>版本資訊：</b>v1.0.3</p>
         </div>
         <button id="about-close-btn" class="secondary" style="margin-top:15px;">返回首頁</button>
       </div>
@@ -323,16 +323,28 @@
         <div style="flex: 1; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
           <div style="font-weight: bold; color: #ffd700; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 6px;">歷代公告</div>
           <div style="display: flex; flex-direction: column; gap: 5px;">
-            <button id="notice-btn-v102" class="secondary active-notice" style="text-align: left; font-size: 13px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;">版本 V1.0.2 更新</button>
-            <button id="notice-btn-v101" class="secondary" style="text-align: left; font-size: 13px; padding: 8px 10px; background-color: #1a1a1a; border-left: 4px solid #555;">版本 V1.0.1 更新</button>
+            <button id="notice-btn-v103" class="secondary active-notice" style="text-align: left; font-size: 13px; padding: 8px 10px; background-color: #222; border-left: 4px solid #1db954;">版本 V1.0.3 更新</button>
+            <button id="notice-btn-v102" class="secondary" style="text-align: left; font-size: 13px; padding: 8px 10px; background-color: #1a1a1a; border-left: 4px solid #555;">版本 V1.0.2 更新</button>
           </div>
         </div>
         
         <div style="flex: 2; background: #121212; border: 1px solid #333; border-radius: 8px; padding: 15px; font-size: 14px; line-height: 1.6; overflow-y: auto;">
-          <!-- 內容區塊 1：V1.0.2 (預設顯示) -->
-          <div id="notice-content-v102">
+          <!-- 內容區塊 1：V1.0.3 (預設顯示) -->
+          <div id="notice-content-v103">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: bold; font-size: 16px; color: #1db954;">版本 V1.0.2 更新</span>
+              <span style="font-weight: bold; font-size: 16px; color: #1db954;">版本 V1.0.3 更新</span>
+              <span style="font-size: 12px; color: #888;">公布時間：2026-06-08</span>
+            </div>
+            <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 6px;">
+              <li>更新遊戲核心規則為「全員參與制」：每個人都必須猜中答案才推進下一輪。</li>
+              <li>調整計分邏輯：僅每局首位猜對的玩家獲得 1 分，其餘猜中的玩家同樣算作解鎖通關但不加分。</li>
+            </ol>
+          </div>
+
+          <!-- 內容區塊 2：V1.0.2 -->
+          <div id="notice-content-v102" class="hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-weight: bold; font-size: 16px; color: #aaa;">版本 V1.0.2 更新</span>
               <span style="font-size: 12px; color: #888;">公布時間：2026-06-07</span>
             </div>
             <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 6px;">
@@ -342,22 +354,6 @@
               <li>更改將設定裡的出題者出題時間上限從90秒改至180秒。</li>
               <li>優化防止因誤觸返回鍵直接退出網頁的問題。</li>
               <li>優化房主無緣無故解散房間的問題。</li>
-            </ol>
-          </div>
-
-          <!-- 內容區塊 2：V1.0.1 -->
-          <div id="notice-content-v101" class="hidden">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: bold; font-size: 16px; color: #aaa;">版本 V1.0.1 更新</span>
-              <span style="font-size: 12px; color: #888;">公布時間：2026-06-01</span>
-            </div>
-            <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 6px;">
-              <li>修正非房主玩家當猜題者無法搶答的問題</li>
-              <li>新增猜題者可看見自己和其他猜題者猜錯的答案</li>
-              <li>新增猜題時間15秒左右可選擇跳過</li>
-              <li>新增房間背景可選擇上傳圖片作為背景又或者可使用自定義調色盤</li>
-              <li>新增公告區塊</li>
-              <li>房間設定介面移至齒輪按鈕 更新房間介面</li>
             </ol>
           </div>
         </div>
@@ -373,7 +369,7 @@
       <p style="text-align: left; line-height: 1.6; font-size:15px;">
         由一位玩家擔任<b>出題者</b>，寫下歌詞與正確歌名。<br>
         其餘玩家為<b>猜題者</b>，需在時間內搶答歌名。<br>
-        最先打出正確答案者獲得 1 分！率先達到指定分數者獲勝！
+        <b>全員參與制：</b>每個人都要猜中才推進下一輪，但積分只有首位猜到的玩家才有分！率先達到指定分數者獲勝！
       </p>
       <button id="confirm-intro-btn">確認 (<span id="ready-count">0</span>/<span id="total-count">0</span>)</button>
     </div>
@@ -584,22 +580,22 @@
 
     document.getElementById('announcement-close-btn').addEventListener('click', () => { announcementModal.classList.add('hidden'); });
 
-    document.getElementById('notice-btn-v102').addEventListener('click', () => {
-      document.getElementById('notice-content-v102').classList.remove('hidden');
-      document.getElementById('notice-content-v101').classList.add('hidden');
-      document.getElementById('notice-btn-v102').style.backgroundColor = '#222';
-      document.getElementById('notice-btn-v102').style.borderLeftColor = '#1db954';
-      document.getElementById('notice-btn-v101').style.backgroundColor = '#1a1a1a';
-      document.getElementById('notice-btn-v101').style.borderLeftColor = '#555';
-    });
-
-    document.getElementById('notice-btn-v101').addEventListener('click', () => {
-      document.getElementById('notice-content-v101').classList.remove('hidden');
+    document.getElementById('notice-btn-v103').addEventListener('click', () => {
+      document.getElementById('notice-content-v103').classList.remove('hidden');
       document.getElementById('notice-content-v102').classList.add('hidden');
-      document.getElementById('notice-btn-v101').style.backgroundColor = '#222';
-      document.getElementById('notice-btn-v101').style.borderLeftColor = '#1db954';
+      document.getElementById('notice-btn-v103').style.backgroundColor = '#222';
+      document.getElementById('notice-btn-v103').style.borderLeftColor = '#1db954';
       document.getElementById('notice-btn-v102').style.backgroundColor = '#1a1a1a';
       document.getElementById('notice-btn-v102').style.borderLeftColor = '#555';
+    });
+
+    document.getElementById('notice-btn-v102').addEventListener('click', () => {
+      document.getElementById('notice-content-v102').classList.remove('hidden');
+      document.getElementById('notice-content-v103').classList.add('hidden');
+      document.getElementById('notice-btn-v102').style.backgroundColor = '#222';
+      document.getElementById('notice-btn-v102').style.borderLeftColor = '#1db954';
+      document.getElementById('notice-btn-v103').style.backgroundColor = '#1a1a1a';
+      document.getElementById('notice-btn-v103').style.borderLeftColor = '#555';
     });
 
     function backToMainMenu() {
@@ -670,7 +666,6 @@
       }
     });
 
-    // 改用 change 事件避免滑動拉條時觸發頻繁更新或不小心誤觸
     playerLimitRange.addEventListener('change', (e) => {
       if (!isHost) return;
       document.getElementById('player-limit-val').innerText = e.target.value;
@@ -954,7 +949,7 @@
       currentActiveRoomCode = generateRoomCode();
       isHost = true;
       isSelfLeaving = false;
-      activePlayers = [{ name: myPlayerName, color: myPlayerColor, isHost: true, isReady: true, score: 0, introReady: false, hasSkipped: false }];
+      activePlayers = [{ name: myPlayerName, color: myPlayerColor, isHost: true, isReady: true, score: 0, introReady: false, hasSkipped: false, hasGuessedCorrect: false }];
 
       await set(ref(db, `rooms/${currentActiveRoomCode}`), {
         code: currentActiveRoomCode,
@@ -998,7 +993,7 @@
         if (roomData.players.some(p => p.name === myPlayerName)) {
           myPlayerName += "_" + Math.floor(Math.random() * 100);
         }
-        activePlayers = [...roomData.players, { name: myPlayerName, color: myPlayerColor, isHost: false, isReady: false, score: 0, introReady: false, hasSkipped: false }];
+        activePlayers = [...roomData.players, { name: myPlayerName, color: myPlayerColor, isHost: false, isReady: false, score: 0, introReady: false, hasSkipped: false, hasGuessedCorrect: false }];
         await update(ref(db, `rooms/${code}`), { players: activePlayers });
 
         listenToRoom(code);
@@ -1021,7 +1016,7 @@
           return;
         }
 
-        const updatedPlayers = activePlayers.map(p => ({ ...p, score: 0, introReady: false, hasSkipped: false }));
+        const updatedPlayers = activePlayers.map(p => ({ ...p, score: 0, introReady: false, hasSkipped: false, hasGuessedCorrect: false }));
         const makerIdx = Math.floor(Math.random() * updatedPlayers.length);
 
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
@@ -1065,10 +1060,11 @@
         const item = document.createElement('div');
         item.className = `rank-item ${isMaker ? 'is-maker' : ''}`;
         const nameColor = p.color || '#fff';
+        const guessedTag = p.hasGuessedCorrect ? ' ✔' : '';
         item.innerHTML = `
           <div style="font-size:12px; color:#888;">第 ${index + 1} 名</div>
           <div style="font-weight:bold; font-size:13px; color:${nameColor};">${p.name} ${isMaker ? '👑' : ''}</div>
-          <div style="color:#1db954; font-size:13px;">${p.score || 0} 分</div>
+          <div style="color:#1db954; font-size:13px;">${p.score || 0} 分${guessedTag}</div>
         `;
         rankBoard.appendChild(item);
       });
@@ -1171,11 +1167,18 @@
         document.getElementById('guesser-panel').classList.remove('hidden');
         document.getElementById('display-lyrics').innerText = roomData.currentLyrics || "(無歌詞)";
 
+        const myData = roomData.players.find(p => p.name === myPlayerName);
+        const alreadyCorrect = myData && myData.hasGuessedCorrect;
+
         if (isMaker) {
           guessStatus.innerText = "👑 你是出題者，正在觀看玩家搶答...";
           guessInput.disabled = true;
           submitGuessBtn.disabled = true;
           skipVoteBtn.classList.add('hidden');
+        } else if (alreadyCorrect) {
+          guessStatus.innerText = "✨ 你已經猜對了！等待其他玩家中...";
+          guessInput.disabled = true;
+          submitGuessBtn.disabled = true;
         } else {
           guessStatus.innerText = "🔥 搶答開始！請快速打出歌名：";
           guessInput.disabled = false;
@@ -1267,33 +1270,54 @@
       const roomData = roomSnap.val();
       if (!roomData || roomData.gameState !== 'GUESSING') return;
 
+      const myDataInSnap = roomData.players.find(p => p.name === myPlayerName);
+      if (myDataInSnap && myDataInSnap.hasGuessedCorrect) return; // 已經猜對過就直接略過
+
       if (cleanString(guess) === cleanString(roomData.currentAnswer)) {
         guessInput.value = "";
-        const successMsg = `🎉 恭喜 [${myPlayerName}] 猜對答案！`;
-        sendChatMessage(successMsg, true);
 
+        // 核心邏輯：使用 Transaction 判定是否為第一位猜對者
+        let isFirstScoredThisTime = false;
         await runTransaction(ref(db, `rooms/${currentActiveRoomCode}`), (room) => {
           if (room && room.gameState === 'GUESSING') {
             const winner = room.players.find(p => p.name === myPlayerName);
             if (winner && !winner.hasGuessedCorrect) {
-              winner.score = (winner.score || 0) + 1;
               winner.hasGuessedCorrect = true;
+
+              // 檢查目前是否已經有人加過分（或者透過全體有沒有人分數增加來判斷，此處我們檢查是否有任何其他玩家在本局獲得過首位加分，或直接檢查全體總分是否已經由別人拿了）
+              // 簡化做法：檢查房內是不是有人已經加過這一題的分數，或者我們可以設立一個 hasFirstScored 標記
+              if (!room.hasFirstScored) {
+                winner.score = (winner.score || 0) + 1;
+                room.hasFirstScored = true;
+                isFirstScoredThisTime = true;
+              }
             }
-            room.latestFeedback = successMsg;
           }
           return room;
         });
 
-        // 立即檢查是否所有人皆已猜中，若是則房主直接結束此回合
-        const updatedSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
-        const updatedData = updatedSnap.val();
-        if (updatedData && updatedData.gameState === 'GUESSING') {
-          const currentMaker = updatedData.players[updatedData.currentMakerIndex];
-          const guessers = updatedData.players.filter(p => p.name !== currentMaker.name);
+        // 重新讀取最新狀態來發送對應的聊天提示
+        const freshSnap = await get(ref(db, `rooms/${currentActiveRoomCode}`));
+        const freshData = freshSnap.val();
+
+        if (isFirstScoredThisTime) {
+          const firstMsg = `🎉 恭喜 [${myPlayerName}] 第一個猜對答案，獲得 +1 分！`;
+          sendChatMessage(firstMsg, true);
+          await update(ref(db, `rooms/${currentActiveRoomCode}`), { latestFeedback: firstMsg });
+        } else {
+          const correctMsg = `✨ [${myPlayerName}] 猜對了答案！(已解鎖)`;
+          sendChatMessage(correctMsg, true);
+          await update(ref(db, `rooms/${currentActiveRoomCode}`), { latestFeedback: correctMsg });
+        }
+
+        // 檢查是否所有猜題者都已經答對了
+        if (freshData && freshData.gameState === 'GUESSING') {
+          const currentMaker = freshData.players[freshData.currentMakerIndex];
+          const guessers = freshData.players.filter(p => p.name !== currentMaker.name);
           const allGuessed = guessers.length > 0 && guessers.every(p => p.hasGuessedCorrect);
 
           if (isHost && allGuessed) {
-            endRound(updatedData, "所有玩家皆已猜中答案！");
+            endRound(freshData, "所有玩家皆已順利猜中答案！");
           }
         }
 
@@ -1385,12 +1409,14 @@
           gameState: 'ENDED',
           winBoard: winBoard,
           players: resetPlayers,
+          hasFirstScored: false,
           latestFeedback: `🏆 遊戲結束！由 [${winner.name}] 獲得勝利！`
         });
       } else {
         await update(ref(db, `rooms/${currentActiveRoomCode}`), {
           gameState: 'ROUND_OVER',
           players: resetPlayers,
+          hasFirstScored: false,
           latestFeedback: finalNotice
         });
 
